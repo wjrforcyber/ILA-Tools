@@ -4,8 +4,8 @@
 #include <ilang/ila/instr_lvl_abs.h>
 #include <ilang/ilang++.h>
 #include <ilang/util/fs.h>
-// #include <ilang/vtarget-out/inv-syn/inv_syn_cegar.h>
 #include <ilang/vtarget-out/vtarget_gen.h>
+#include <ilang/vtarget-out/inv-syn/design_to_btor.h>
 
 #include "unit-include/config.h"
 #include "unit-include/memswap.h"
@@ -14,8 +14,7 @@
 
 namespace ilang {
 
-// #ifdef ILANG_BUILD_INVSYN
-#if 0
+
 
 #define DBG_TAG "VlgVerifInvSyn"
 
@@ -38,7 +37,29 @@ public:
   typedef std::vector<std::string> P;
   fs::path outDir;
 
-}; // class TestVlgVerifInvSyn
+};
+
+
+TEST_F(TestVlgVerifInvSyn, BtorGenParsing) {
+
+  auto dirName = os_portable_append_dir(std::string(ILANG_TEST_SRC_ROOT),
+                                        P({"unit-data", "inv_syn", "design2btor"}));
+
+  auto outpath = os_portable_append_dir(std::string(ILANG_TEST_SRC_ROOT),
+                                        P({"unit-data", "inv_syn", "design2btor", "design", "test.v"}));
+  auto outpath = os_portable_append_dir(std::string(ILANG_TEST_SRC_ROOT),
+                                        P({"unit-data", "inv_syn", "design2btor", "output"}));
+
+  DesignToBtor converter;
+  converter.YosysParseDesignToBtor(
+
+  )
+} // CegarPipelineExample
+
+// #ifdef ILANG_BUILD_INVSYN
+#if 0
+
+
 
 // Z3, ABC, FREQHORN
 // ABC w. different configurations

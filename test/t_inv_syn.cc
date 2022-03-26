@@ -24,7 +24,7 @@ public:
   ~TestVlgVerifInvSyn() {}
 
   void SetUp() {
-    // EnableDebug(DBG_TAG);
+    EnableDebug(DBG_TAG);
     outDir = GetRandomFileName(fs::temp_directory_path());
     os_portable_mkdir(outDir);
   }
@@ -42,18 +42,36 @@ public:
 
 TEST_F(TestVlgVerifInvSyn, BtorGenParsing) {
 
-  auto dirName = os_portable_append_dir(std::string(ILANG_TEST_SRC_ROOT),
-                                        P({"unit-data", "inv_syn", "design2btor"}));
-
-  auto outpath = os_portable_append_dir(std::string(ILANG_TEST_SRC_ROOT),
+  auto vlg_path = os_portable_append_dir(std::string(ILANG_TEST_SRC_ROOT),
                                         P({"unit-data", "inv_syn", "design2btor", "design", "test.v"}));
   auto outpath = os_portable_append_dir(std::string(ILANG_TEST_SRC_ROOT),
                                         P({"unit-data", "inv_syn", "design2btor", "output"}));
 
+  rfmap::ClockSpecification clk_spec;
+  rfmap::ResetSpecification rst_spec; // reset cycle is by default 1
+  rfmap::RtlInterfaceMapping interface_spec;
+  interface_spec.reset_pins={"rst"};
+  interface_spec.clock_domain_defs["default"] = {"clk"};
+
   DesignToBtor converter;
   converter.YosysParseDesignToBtor(
+    outpath,
+    {vlg_path},
+    {},
+    "pipeline_v",
+    clk_spec,
+    rst_spec,
+    interface_spec
+  );
 
-  )
+  converter.LoadDesignFromBtor(os_portable_append_dir(outpath, "design.btor"));
+  const auto & info = converter.GetBtorInfo();
+  for ( const auto & id_n : info.state_var_without_names) {
+    ILA_DLOG("GenBtor") << id_n.first << " \t:" << id_n.second.to_string() << std::endl;
+  }
+  for ( const auto & id_n : info.state_vars) {
+    ILA_DLOG("GenBtor") << id_n.first << " \t:" << id_n.second.to_string() << std::endl;
+  }
 } // CegarPipelineExample
 
 // #ifdef ILANG_BUILD_INVSYN

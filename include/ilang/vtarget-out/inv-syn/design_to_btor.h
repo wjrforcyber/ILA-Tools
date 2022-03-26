@@ -42,6 +42,7 @@ public:
       const std::string& module_name,
       const rfmap::ClockSpecification & clock_specification,
       const rfmap::ResetSpecification & reset_specification,
+      const rfmap::RtlInterfaceMapping & interface_specification,
       const _vtg_config & config = _vtg_config()) const;
 
   void LoadDesignFromBtor(const std::string& btor_fname);

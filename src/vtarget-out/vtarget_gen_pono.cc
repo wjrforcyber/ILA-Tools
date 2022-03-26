@@ -278,15 +278,24 @@ void VlgSglTgtGen_Pono::GenYosysScript(
     refinement_map.reset_specification.initial_state.empty()
     ) << "TODO: custom reset sequence not implemented yet";
 
+
+  unsigned reset_cycle = refinement_map.reset_specification.reset_cycle;
+  if (!_vtg_config.ForceInstCheckReset && target_type == target_type_t::INSTRUCTIONS) {
+    ILA_INFO_IF(reset_cycle != 1) << "For instruction verification from symbolic state"
+      << " ILAng will set reset_cycle to 1";
+    reset_cycle = 1;
+  }
+  
+  
   ys_script_fout << ReplaceAll(
     ReplaceAll(
       ReplaceAll(
           ReplaceAll(
               ReplaceAll(yosysGenerateBtor, "%rstlen%",
                           std::to_string(
-                              refinement_map.reset_specification.reset_cycle)),
+                              reset_cycle)),
               "%cycle%",
-              std::to_string(refinement_map.reset_specification.reset_cycle)),
+              std::to_string(reset_cycle)),
           "%module%", top_mod_name),
       "%propselect%", property_selection_cmd),
     "%-nomap%", _vtg_config.YosysSmtArrayForRegFile ? "-nomap" : "" );

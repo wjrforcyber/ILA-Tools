@@ -17,7 +17,7 @@ chformal -assume -early;
 memory %-nomap%;
 flatten
 setundef -undriven -expose;
-sim -clock %clk% -reset rst -rstlen %rstlen% -n %cycle% -w %module%
+%sim%
 )***";
 // %propselect% is for
 
@@ -65,12 +65,14 @@ void DesignToBtor::LoadDesignFromBtor(const std::string& btor_fname) {
         int id = StrToInt(line_split[0]);
         btor_state_vars.state_var_without_names.emplace(id, sort);
       } else { // line_split.size() > 3
+        ILA_WARN_IF (IN(line_split[3], btor_state_vars.state_vars)) << "Overwriting sv " << line_split[3] << std::endl;
         btor_state_vars.state_vars.emplace(line_split[3], sort);
       }
     } else if (line_split.size() >= 4 && line_split[1] == "output") {
       int sid = StrToInt(line_split[2]);
       auto pos = btor_state_vars.state_var_without_names.find(sid);
       if (pos != btor_state_vars.state_var_without_names.end()) {
+        ILA_WARN_IF (IN(line_split[3], btor_state_vars.state_vars)) << "Overwriting sv " << line_split[3] << std::endl;
         btor_state_vars.state_vars.emplace(line_split[3], pos->second);
         btor_state_vars.state_var_without_names.erase(pos);
       }
@@ -85,7 +87,8 @@ bool DesignToBtor::YosysParseDesignToBtor(
     const std::string& module_name,
     const rfmap::ClockSpecification & clock_specification,
     const rfmap::ResetSpecification & reset_specification,
-    const _vtg_config & config = _vtg_config()) const {
+    const rfmap::RtlInterfaceMapping & interface_specification,
+    const _vtg_config & config) const {
 
 // 1. generate Yosys Script
   auto ys_script_name_path = os_portable_append_dir(output_path,"genBtor.ys");
@@ -118,21 +121,53 @@ bool DesignToBtor::YosysParseDesignToBtor(
       reset_specification.custom_reset_sequence.empty() &&
       reset_specification.initial_state.empty()
       ) << "TODO: custom reset sequence not implemented yet";
+    
+    ILA_CHECK(
+        interface_specification.clock_domain_defs.size() == 1 &&
+        IN("default", interface_specification.clock_domain_defs))
+        << "Not implemented. Cannot handle multi-clock.";
+    
+    ILA_CHECK(
+        interface_specification.clock_domain_defs.at("default").size() == 1)
+        << "Not implemented. Cannot handle multi-clock in `default` domain.";
 
+    ILA_CHECK(
+        interface_specification.reset_pins.size() +  
+        interface_specification.nreset_pins.size() <= 1
+        )
+        << "Not implemented. Cannot handle multiple reset.";
+
+    // sim -clock %clkpin% -reset %rstpin% -rstlen %rstlen% -n %cycle% -w %module%
+    std::string sim_string;
+    if(
+        interface_specification.reset_pins.size() +  
+        interface_specification.nreset_pins.size() != 0) {
+      sim_string = "sim -clock ";
+      sim_string += *(interface_specification.clock_domain_defs.at("default").begin());
+      
+      if (!interface_specification.reset_pins.empty()) {
+        sim_string += " -reset " + *(interface_specification.reset_pins.begin());
+      } else {
+        sim_string += " -nreset " + *(interface_specification.nreset_pins.begin());
+      }
+      sim_string += " -rstlen " + std::to_string(reset_specification.reset_cycle);
+      sim_string += " -n " + std::to_string(reset_specification.reset_cycle);
+      sim_string += " -w " + module_name;
+    }
     ys_script_fout << ReplaceAll(
-      ReplaceAll(
-      ReplaceAll(
         ReplaceAll(
+          ReplaceAll(
             ReplaceAll(
-                ReplaceAll(yosysGenerateBtor, "%rstlen%",
-                            std::to_string(
-                                reset_specification.reset_cycle)),
-                "%cycle%",
-                std::to_string(reset_specification.reset_cycle)),
-            "%module%", module_name),
-        "%propselect%", ""),
-      "%-nomap%", config.YosysSmtArrayForRegFile ? "-nomap" : "" ),
-      "",);
+                ReplaceAll(
+                    ReplaceAll(yosysGenerateBtor, "%rstlen%",
+                                std::to_string(
+                                    reset_specification.reset_cycle)),
+                    "%cycle%",
+                    std::to_string(reset_specification.reset_cycle)),
+                "%module%", module_name),
+            "%propselect%", ""),
+          "%-nomap%", config.YosysSmtArrayForRegFile ? "-nomap" : "" ),
+        "%sim%", sim_string);
 
     // this is for pono, I don't know why it is unhappy, but we need fix this
     // in the long run
@@ -149,11 +184,11 @@ bool DesignToBtor::YosysParseDesignToBtor(
     std::ofstream fout(script_fname);
     if (!fout.is_open()) {
       ILA_ERROR << "Error writing to file:" << script_fname;
-      return;
+      return false;
     }
     fout << "#!/bin/bash" << std::endl;
     fout << "echo \"* Remove prior results...\"" << std::endl;
-    fout << "rm -f *.btor2 *.vcd __yosys*.txt" << std::endl;
+    fout << "rm -f *.btor2 *.btor  __yosys*.txt" << std::endl;
 
     fout << "echo \"* Parsing input...\"" << std::endl;
 

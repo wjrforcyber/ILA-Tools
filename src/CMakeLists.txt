@@ -20,6 +20,7 @@ add_subdirectory(verilog-out)
 add_subdirectory(vtarget-out)
 add_subdirectory(smt-inout)
 add_subdirectory(rfmap-in)
+add_subdirectory(symsim-aux)
 
 if(${ILANG_BUILD_SYNTH})
   add_subdirectory(target-itsy)

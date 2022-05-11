@@ -1,5 +1,4 @@
-/// \file Verilog Verification Target Generator -- for Pono
-/// This file should not be included, as it requires the impl.
+/// \file Generating sym-sim related auxiliary information
 // ---Hongce Zhang
 
 #ifndef ILANG_SYMSIM_AUX_H__
@@ -64,10 +63,21 @@ public:
 
 
 private:
+  /// to store the Vlg input for ILA states / inputs
+  std::map<vlg_name_t, unsigned> input_signals;
+  void InsertInputVar(const ExprPtr& e);
+  std::string InsertOutputVar(const ExprPtr& e) ;
+
   // --------------------- HELPER FUNCTIONS ---------------------------- //
-  /// handle a input variable (memvar/bool/bv)
-  void insertIlaInputAndStateVar(const InstrLvlAbsPtr& input);
-  
+  // Here we are not using depthfirstSearch as we need to alternate between
+  // root-first/root-last traversal
+  /// traverse to the subtree, caller: ParseNonMemUpdateExpr
+  void parseArg(const ExprPtr& e);
+  /// After you parse a subtree, this can help you get the vlg name associated
+  /// with it
+  VerilogGenerator::vlg_name_t getVlgFromExpr(const ExprPtr& e);
+  /// a short cut of calling getVlgFromExpr to find arg's vlg names
+  VerilogGenerator::vlg_name_t getArg(const ExprPtr& e, const size_t& i);
   
   /// called by ParseNonMemUpdateExpr to deal with a boolop node
   vlg_name_t translateBoolOp(const std::shared_ptr<ExprOp>& e);
@@ -82,12 +92,20 @@ public:
   /// \param[in] Configuration
   /// \param[in] Top module name, if empty, get it from instruction name
   
-  VerilogGenerator(const VlgGenConfig& config = VlgGenConfig(),
-                   const std::string& modName = "");
+  InstrUpdateFunGenerator(
+    const VlgGenConfig& config = VlgGenConfig(),
+    const std::string& modName = "Instr"): 
+    VerilogGeneratorBase(config, modName, "", "") {}
                    
   /// generate F_{sv1} := ..., F_{sv2} := ... to Verilog
   /// NOTE: this will ignore decode
-  void ExportInstrUpdate(const InstrPtr& instr_ptr_, const std::string& fname);
+  void ExportInstrUpdate(const InstrPtr& instr_ptr_);
+
+  /// generate F_{sv1} := ..., F_{sv2} := ... to Verilog
+  /// NOTE: this will ignore decode
+  void ExportInstrUpdateSmt2(const InstrPtr& instr_ptr_, std::map<std::string,std::string> & output );
+
+  // then you can call DumpToFile
 
 }; 
 

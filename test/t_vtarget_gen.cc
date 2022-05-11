@@ -168,6 +168,7 @@ TEST(TestVlgTargetGen, PipeStallRfmap) {
   RtlVerifyConfig cfg;
   cfg.PonoEngine = "bmc";
   cfg.PonoOtherOptions = " -k 5 -v 1 ";
+  cfg.ExportSymbolicSimulationAuxInfo = true;
   
   auto ila_model = SimplePipe::BuildStallModel();
 

@@ -57,6 +57,9 @@ namespace ilang {
     /// if true : assume ((START || STARTED) && cond && not_triggered)
     ///            |-> reg == value
     bool EnforcingValueRecorderForOnlyOneCycle;
+    /// if true: will output auxiliary information for symbolic-simulation-based verification
+    /// default false
+    bool ExportSymbolicSimulationAuxInfo;
 
 
     /// Configure the behavior of INV target, if false,
@@ -212,6 +215,7 @@ namespace ilang {
           InstructionNoReset(true), InvariantCheckNoReset(false),
           OnlyCheckInstUpdatedVars(true), VerilogGenPassNodeName(false),
           EnforcingValueRecorderForOnlyOneCycle(true),
+          ExportSymbolicSimulationAuxInfo(false),
           ValidateSynthesizedInvariant(_validate_synthesized_inv::ALL),
 
           // ----------- Options for Pono settings -------------- //

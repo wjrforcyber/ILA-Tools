@@ -377,6 +377,10 @@ public:
   /// export extra things (problem)
   void virtual Export_problem(
       const std::string& extra_name) = 0; // only for cosa
+
+  /// This function can export auxiliary information used for symbolic simulatio
+  /// based verification (only works for Pono/Open-source flow)
+  virtual void Export_SymSimAuxInfo();
   /// export the memory abstraction (implementation)
   /// Yes, this is also implementation specific, (jasper may use a different
   /// one)

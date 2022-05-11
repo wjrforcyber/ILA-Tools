@@ -27,10 +27,18 @@ VerilogGeneratorBase::VerilogGeneratorBase(const VlgGenConfig& config,
       cfg_(config) {
 
   // clk, rst
-  add_wire(clkName, 1);
-  add_input(clkName, 1);
-  add_wire(rstName, 1);
-  add_input(rstName, 1);
+  ILA_INFO_IF(clkName.empty()) << "Generate Verilog without Clock signal.";
+  if (!clkName.empty()) {
+    add_wire(clkName, 1);
+    add_input(clkName, 1);
+  }
+
+  ILA_INFO_IF(rstName.empty()) << "Generate Verilog without reset signal.";
+  if (!rstName.empty()) {
+    add_wire(rstName, 1);
+    add_input(rstName, 1);
+  }
+  
   if (cfg_.start_signal) {
     startName = "__START__";
     add_wire(startName, 1);

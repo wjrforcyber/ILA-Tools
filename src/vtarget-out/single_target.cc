@@ -14,6 +14,7 @@
 #include <ilang/util/fs.h>
 #include <ilang/util/log.h>
 #include <ilang/util/str_util.h>
+#include <ilang/symsim-aux/symsim_aux.h>
 
 namespace ilang {
 
@@ -425,6 +426,28 @@ void VlgSglTgtGen::Export_wrapper(const std::string& wrapper_name) {
   }
 }
 
+void VlgSglTgtGen::Export_SymSimAuxInfo() {
+  if (target_type != target_type_t::INSTRUCTIONS)
+    return;
+  ILA_NOT_NULL(_instr_ptr);
+  std::string fn = os_portable_append_dir(_output_path, "symsim_instr_func.v");
+  InstrUpdateFunGenerator gen;
+  gen.ExportInstrUpdate(_instr_ptr);
+  std::ofstream fout(fn);
+  ILA_ERROR_IF(!fout.is_open()) << "Cannot write to " << fn;
+  gen.DumpToFile(fout);
+
+  std::map<std::string, std::string> update_func;
+  gen.ExportInstrUpdateSmt2(_instr_ptr, update_func);
+  
+
+  std::string fnSmt = os_portable_append_dir(_output_path, "symsim_instr_func.smt2");
+  std::ofstream fout2(fnSmt);
+  ILA_ERROR_IF(!fout2.is_open()) << "Cannot write to " << fnSmt;
+  for (const auto & n_v_pair : update_func)
+    fout2 << "\n;" << n_v_pair.first << "\n" << n_v_pair.second << "\n";
+}
+
 /// export the ila verilog
 void VlgSglTgtGen::Export_ila_vlg(const std::string& ila_vlg_name) {
 
@@ -470,6 +493,11 @@ void VlgSglTgtGen::ExportAll(const std::string& wrapper_name,
   Export_problem(extra_name); // for JG this is do.tcl
                               // for Pono: this is the yosys.script and
   Export_script(script_name);
+
+  
+  if(_vtg_config.ExportSymbolicSimulationAuxInfo) {
+    Export_SymSimAuxInfo();
+  }
 } // end of ExportAll
 
 } // namespace ilang

@@ -37,6 +37,31 @@ static std::string val2str(const VCDValue& v) {
   return ret.str();
 }
 
+
+static std::string val2SMTstr(const VCDValue& v) {
+  std::stringstream ret;
+
+  switch (v.get_type()) {
+  case (VCD_SCALAR):
+    ret << "#b" << VCDValue::VCDBit2Char(v.get_value_bit());
+    break;
+  case (VCD_VECTOR): {
+    const VCDBitVector* vecval = v.get_value_vector();
+    // ret << std::to_string(vecval->size()) ;
+    ret << "#b";
+    for (auto it = vecval->begin(); it != vecval->end(); ++it)
+      ret << VCDValue::VCDBit2Char(*it);
+  } break;
+  case (VCD_REAL):
+    ILA_ERROR << "Unable to handle real numbers in counterexamples.";
+    ret << v.get_value_real();
+    break;
+  default:
+    ILA_ERROR << "Unknown value type!";
+  }
+  return ret.str();
+}
+
 std::string prepend(const std::string& prefix, const std::string& sig_name) {
   if (prefix.empty())
     return sig_name;
@@ -138,9 +163,15 @@ void CexExtractor::parse_from(const std::string& vcd_file_name,
 
     std::string check_name = vlg_name;
     {
-      auto pos = check_name.find('[');
-      if (pos != std::string::npos)
-        check_name = check_name.substr(0, pos);
+      auto pos = check_name.rfind('[');
+      if (pos != std::string::npos) {
+        auto rpos = check_name.find(']',pos);
+        ILA_ERROR_IF(rpos == std::string::npos) 
+          << "Cex variable name:" << check_name << " has unmatched [] pair";
+        auto colon_pos = check_name.find(':', pos);
+        if (colon_pos != std::string::npos && colon_pos < rpos)
+          check_name = check_name.substr(0, pos);
+      }
     }
 
     bool is_this_var_reg = is_reg(check_name);
@@ -155,7 +186,7 @@ void CexExtractor::parse_from(const std::string& vcd_file_name,
       continue;
     }
 
-    std::string val = val2str(*vlg_val_ptr);
+    std::string val = val2SMTstr(*vlg_val_ptr);
 
     cex.insert(std::make_pair(vlg_name, val));
     cex_is_reg.insert(std::make_pair(vlg_name, is_this_var_reg));

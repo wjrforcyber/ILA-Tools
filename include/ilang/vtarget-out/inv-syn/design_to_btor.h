@@ -1,5 +1,9 @@
 /// \file Use Yosys to parser Verilog to Btor
-// Hongce Zhang
+// -- Hongce Zhang
+// this does not require adding assumptions/assertions
+// you can do that in the separate property interface
+// but this file is simply for converting a Verilog
+// to btor
 
 #ifndef ILANG_VTARGET_DESIGN_TO_BTOR_H__
 #define ILANG_VTARGET_DESIGN_TO_BTOR_H__

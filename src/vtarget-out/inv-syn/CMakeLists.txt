@@ -10,6 +10,7 @@ target_sources(${ILANG_LIB_NAME} PRIVATE
   ${CMAKE_CURRENT_SOURCE_DIR}/inv_abc_parse.cc
   ${CMAKE_CURRENT_SOURCE_DIR}/grain_inv_parse.cc
   ${CMAKE_CURRENT_SOURCE_DIR}/design_to_btor.cc
+  ${CMAKE_CURRENT_SOURCE_DIR}/design_env_inv.cc
 )
 
 

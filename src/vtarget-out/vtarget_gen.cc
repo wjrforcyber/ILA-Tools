@@ -14,21 +14,6 @@ bool VlgVerifTgtGenBase::isValidVerifBackend(ModelCheckerSelection vbackend) {
     return true;
   if (vbackend == ModelCheckerSelection::JASPERGOLD)
     return true;
-  /*
-  if (vbackend == ModelCheckerSelection::RELCHC)
-    return true;
-  if ((vbackend & ModelCheckerSelection::YOSYS) == ModelCheckerSelection::YOSYS) {
-    if (vbackend == ModelCheckerSelection::ABCPDR)
-      return true;
-    if (vbackend == ModelCheckerSelection::BTOR_GENERIC)
-      return true;
-    if ((vbackend & ModelCheckerSelection::CHC) == ModelCheckerSelection::CHC) {
-      if (vbackend == ModelCheckerSelection::ELD_CEGAR ||
-          vbackend == ModelCheckerSelection::GRAIN_SYGUS ||
-          vbackend == ModelCheckerSelection::Z3PDR)
-        return true;
-    }
-  }*/
   return false;
 }
 
@@ -46,7 +31,7 @@ VerilogVerificationTargetGenerator::VerilogVerificationTargetGenerator(
           implementation_top_module,
           rfmap::VerilogRefinementMap(refinement_variable_mapping,
                                       refinement_conditions),
-          output_path, ila_ptr, backend, vtg_config, NULL)) {}
+          output_path, ila_ptr, backend, vtg_config)) {}
 
 VerilogVerificationTargetGenerator::~VerilogVerificationTargetGenerator() {
   if (_generator)

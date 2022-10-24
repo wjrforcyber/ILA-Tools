@@ -31,8 +31,7 @@ VlgVerifTgtGen::VlgVerifTgtGen(
     const std::string& implementation_top_module,
     const rfmap::VerilogRefinementMap& refinement,
     const std::string& output_path, const InstrLvlAbsPtr& ila_ptr,
-    ModelCheckerSelection backend, const RtlVerifyConfig& vtg_config,
-    advanced_parameters_t* adv_ptr)
+    ModelCheckerSelection backend, const RtlVerifyConfig& vtg_config)
     : _vlg_impl_include_path(implementation_include_path),
       _vlg_impl_srcs(implementation_srcs),
       _vlg_impl_top_name(implementation_top_module), _refinement(refinement),
@@ -40,7 +39,7 @@ VlgVerifTgtGen::VlgVerifTgtGen(
       // configure is only for ila, generate the start signal
       vlg_info_ptr(
           NULL), // not creating it now, because we don't have the info to do so
-      _backend(backend), _vtg_config(vtg_config), _advanced_param_ptr(adv_ptr),
+      _backend(backend), _vtg_config(vtg_config),
       _bad_state(false) {
 
   if (_ila_ptr == nullptr) {
@@ -86,22 +85,6 @@ void VlgVerifTgtGen::GenerateTargets(void) {
     if (!_refinement.global_invariants.empty())
       invariantExists = true;
 
-    if ((_vtg_config.ValidateSynthesizedInvariant ==
-             RtlVerifyConfig::_validate_synthesized_inv::ALL ||
-         _vtg_config.ValidateSynthesizedInvariant ==
-             RtlVerifyConfig::_validate_synthesized_inv::CONFIRMED) &&
-        (_advanced_param_ptr && _advanced_param_ptr->_inv_obj_ptr != NULL &&
-         !_advanced_param_ptr->_inv_obj_ptr->GetVlgConstraints().empty()))
-      invariantExists = true;
-
-    if ((_vtg_config.ValidateSynthesizedInvariant ==
-             RtlVerifyConfig::_validate_synthesized_inv::ALL ||
-         _vtg_config.ValidateSynthesizedInvariant ==
-             RtlVerifyConfig::_validate_synthesized_inv::CANDIDATE) &&
-        (_advanced_param_ptr &&
-         _advanced_param_ptr->_candidate_inv_ptr != NULL &&
-         !_advanced_param_ptr->_candidate_inv_ptr->GetVlgConstraints().empty()))
-      invariantExists = true;
 
     auto sub_output_path = os_portable_append_dir(_output_path, "invariants");
     if (_backend == ModelCheckerSelection::PONO && invariantExists) {
@@ -110,7 +93,7 @@ void VlgVerifTgtGen::GenerateTargets(void) {
           NULL, // invariant
           _ila_ptr, _refinement, vlg_info_ptr, "wrapper", _vlg_impl_srcs,
           _vlg_impl_include_path, _vtg_config, _backend,
-          target_type_t::INVARIANTS, _advanced_param_ptr);
+          target_type_t::INVARIANTS);
       target.ConstructWrapper();
       target.ExportAll("wrapper.v", "ila.v", "run.sh", "gen_btor.ys");
       target.do_not_instantiate(); // no use, just for coverage
@@ -120,52 +103,12 @@ void VlgVerifTgtGen::GenerateTargets(void) {
           NULL, // invariant
           _ila_ptr, _refinement, vlg_info_ptr, "wrapper", _vlg_impl_srcs,
           _vlg_impl_include_path, _vtg_config, _backend,
-          target_type_t::INVARIANTS, _advanced_param_ptr);
+          target_type_t::INVARIANTS);
       target.ConstructWrapper();
       target.ExportAll("wrapper.v", "ila.v", "run.sh", "do.tcl");
       target.do_not_instantiate(); // no use, just for coverage
     }
-#if 0 
-    else if (_backend == ModelCheckerSelection::RELCHC && invariantExists) {
-      // will actually fail : not supported for using relchc for invariant
-      // targets
-      auto target = VlgSglTgtGen_Relchc(
-          sub_output_path,
-          NULL, // invariant
-          _ila_ptr, _cfg, rf_vmap, rf_cond, supplementary_info, vlg_info_ptr,
-          "wrapper", _vlg_impl_srcs,
-          _vlg_impl_include_path, _vtg_config, _backend,
-          target_type_t::INVARIANTS, _advanced_param_ptr);
-      target.ConstructWrapper();
-      target.ExportAll("wrapper.v", "ila.v", "run.sh", "__design_smt.smt2",
-                       "absmem.v");
-      target.do_not_instantiate();
-    } else if ((_backend & ModelCheckerSelection::YOSYS) ==
-                   ModelCheckerSelection::YOSYS &&
-               invariantExists) {
-      auto target = VlgSglTgtGen_Yosys(
-          sub_output_path,
-          NULL, // instruction
-          _ila_ptr, _cfg, rf_vmap, rf_cond, supplementary_info, vlg_info_ptr,
-          "wrapper", _vlg_impl_srcs,
-          _vlg_impl_include_path, _vtg_config, _backend,
-          target_type_t::INVARIANTS, _advanced_param_ptr,
-          _chc_target_t::GENERAL_PROPERTY);
-      target.ConstructWrapper();
-      std::string design_file;
-      if (_backend == ModelCheckerSelection::ABCPDR)
-        design_file = "wrapper.aig";
-      else if ((_backend & ModelCheckerSelection::CHC) == ModelCheckerSelection::CHC)
-        design_file = "wrapper.smt2";
-      else if (_backend == ModelCheckerSelection::BTOR_GENERIC)
-        design_file = "wrapper.btor2";
-      else
-        design_file = "wrapper.unknfmt";
 
-      target.ExportAll("wrapper.v", "ila.v", "run.sh", design_file, "absmem.v");
-      target.do_not_instantiate();
-    }
-#endif
     if (invariantExists)
       runnable_script_name.push_back(
           os_portable_append_dir(sub_output_path, "run.sh"));
@@ -203,7 +146,7 @@ void VlgVerifTgtGen::GenerateTargets(void) {
             instr_ptr, // instruction
             _ila_ptr, _refinement, vlg_info_ptr, "wrapper", _vlg_impl_srcs,
             _vlg_impl_include_path, _vtg_config, _backend,
-            target_type_t::INSTRUCTIONS, _advanced_param_ptr);
+            target_type_t::INSTRUCTIONS);
         target.ConstructWrapper();
         target.ExportAll("wrapper.v", "ila.v", "run.sh", "gen_btor.ys");
         target.do_not_instantiate();
@@ -213,7 +156,7 @@ void VlgVerifTgtGen::GenerateTargets(void) {
             instr_ptr, // instruction
             _ila_ptr, _refinement, vlg_info_ptr, "wrapper", _vlg_impl_srcs,
             _vlg_impl_include_path, _vtg_config, _backend,
-            target_type_t::INSTRUCTIONS, _advanced_param_ptr);
+            target_type_t::INSTRUCTIONS);
         target.ConstructWrapper();
         target.ExportAll("wrapper.v", "ila.v", "run.sh", "do.tcl");
         target.do_not_instantiate();
@@ -235,129 +178,5 @@ bool VlgVerifTgtGen::bad_state_return(void) {
   return _bad_state;
 } // bad_state_return
 
-#if 0
-
-std::shared_ptr<smt::YosysSmtParser>
-VlgVerifTgtGen::GenerateInvSynTargets(synthesis_backend_selector s_backend) {
-  ILA_CHECK(_backend == ModelCheckerSelection::YOSYS)
-      << "All inv-syn relies on yosys!";
-
-  if (vlg_info_ptr)
-    delete vlg_info_ptr;
-
-  vlg_info_ptr = new VerilogInfo(_vlg_impl_include_path, _vlg_impl_srcs,
-                                 "RTL", _vlg_impl_top_name);
-  if (vlg_info_ptr == NULL or vlg_info_ptr->in_bad_state()) {
-    ILA_ERROR << "Unable to generate targets. Verilog parser failed.";
-    return nullptr; //
-  }
-
-  // parameter override
-  auto tmp_vtg_config(_vtg_config);
-  tmp_vtg_config.CosaDotReferenceNotify =
-      RtlVerifyConfig::CosaDotReferenceNotify_t::NOTIFY_PANIC;
-
-  auto target = VlgSglTgtGen_Chc(
-      os_portable_append_dir(_output_path, "inv-syn/"),
-      NULL, // invariant
-      _ila_ptr, _cfg, rf_vmap, rf_cond, supplementary_info, vlg_info_ptr,
-      "wrapper", _vlg_impl_srcs,
-      _vlg_impl_include_path, tmp_vtg_config, _backend, s_backend,
-      target_type_t::INV_SYN_DESIGN_ONLY, _advanced_param_ptr, true,
-      _chc_target_t::CEX);
-  target.ConstructWrapper();
-  target.ExportAll("wrapper.v", "ila.v" /*USELESS*/, "run.sh", "wrapper.smt2",
-                   "absmem.v" /*USELESS*/);
-  runnable_script_name.clear();
-  runnable_script_name.push_back(os_portable_append_dir(
-      os_portable_append_dir(_output_path, "inv-syn/"), "run.sh"));
-
-  target.do_not_instantiate();
-  return target.GetDesignSmtInfo();
-} // GenerateInvSynTargets
-
-std::shared_ptr<smt::YosysSmtParser>
-VlgVerifTgtGen::GenerateInvSynEnhanceTargets(const InvariantInCnf& cnf) {
-  ILA_ERROR_IF(_backend != ModelCheckerSelection::YOSYS)
-      << "All inv-syn relies on yosys!";
-
-  if (vlg_info_ptr)
-    delete vlg_info_ptr;
-
-  vlg_info_ptr = new VerilogInfo(_vlg_impl_include_path, _vlg_impl_srcs,
-                                 "RTL", _vlg_impl_top_name);
-  if (vlg_info_ptr == NULL or vlg_info_ptr->in_bad_state()) {
-    ILA_ERROR << "Unable to generate targets. Verilog parser failed.";
-    return nullptr; //
-  }
-
-  // use a temporary configuration
-  auto tmp_vtg_config = _vtg_config;
-  tmp_vtg_config.InvariantSynthesisReachableCheckKeepOldInvariant = true;
-  tmp_vtg_config.YosysSmtFlattenDatatype = true;
-  tmp_vtg_config.CosaDotReferenceNotify =
-      RtlVerifyConfig::CosaDotReferenceNotify_t::NOTIFY_PANIC;
-
-  // TODO: you may need to change a bit of _advanced_param_ptr's inv
-  // and maybe the assume inv part
-  auto target = VlgSglTgtGen_Chc_wCNF(
-      os_portable_append_dir(_output_path, "inv-enhance/"),
-      NULL, // invariant
-      _ila_ptr, _cfg, rf_vmap, rf_cond, supplementary_info, vlg_info_ptr,
-      "wrapper", _vlg_impl_srcs,
-      _vlg_impl_include_path, tmp_vtg_config, _backend,
-      VlgVerifTgtGenBase::synthesis_backend_selector::GRAIN,
-      target_type_t::INV_SYN_DESIGN_ONLY, _advanced_param_ptr, true,
-      _chc_target_t::CEX);
-  target.ConstructWrapper();
-  target.ExportAll("wrapper.v", "ila.v" /*USELESS*/, "run.sh", "wrapper.smt2",
-                   "absmem.v" /*USELESS*/, "inv_cnf.txt", cnf);
-  target.do_not_instantiate();
-  runnable_script_name.clear();
-  runnable_script_name.push_back(os_portable_append_dir(
-      os_portable_append_dir(_output_path, "inv-enhance/"), "run.sh"));
-
-
-  return target.GetDesignSmtInfo();
-} // GenerateInvSynEnhanceTargets
-
-void VlgVerifTgtGen::GenerateInvSynTargetsAbc(bool useGla, bool useCorr,
-                                              bool useAiger) {
-  ILA_ERROR_IF(_backend != ModelCheckerSelection::YOSYS)
-      << "All inv-syn relies on yosys!";
-
-  if (vlg_info_ptr)
-    delete vlg_info_ptr;
-
-  vlg_info_ptr = new VerilogInfo(_vlg_impl_include_path, _vlg_impl_srcs,
-                                 "RTL", _vlg_impl_top_name);
-  if (vlg_info_ptr == NULL or vlg_info_ptr->in_bad_state()) {
-    ILA_ERROR << "Unable to generate targets. Verilog parser failed.";
-    return; //
-  }
-  // parameter override
-  auto tmp_vtg_config(_vtg_config);
-  tmp_vtg_config.CosaDotReferenceNotify =
-      RtlVerifyConfig::CosaDotReferenceNotify_t::NOTIFY_PANIC;
-
-  auto target = VlgSglTgtGen_Abc(
-      os_portable_append_dir(_output_path, "inv-syn-abc/"),
-      NULL, // invariant
-      _ila_ptr, _cfg, rf_vmap, rf_cond, supplementary_info, vlg_info_ptr,
-      "wrapper", _vlg_impl_srcs,
-      _vlg_impl_include_path, tmp_vtg_config, _backend,
-      synthesis_backend_selector::ABC, target_type_t::INV_SYN_DESIGN_ONLY,
-      _advanced_param_ptr, true, _chc_target_t::CEX, useGla, useCorr, useAiger);
-  target.ConstructWrapper();
-  target.ExportAll("wrapper.v", "ila.v" /*USELESS*/, "run.sh",
-                   useAiger ? "wrapper.aig" : "wrapper.blif",
-                   "absmem.v" /*USELESS*/);
-
-  runnable_script_name.clear();
-  runnable_script_name.push_back(os_portable_append_dir(
-      os_portable_append_dir(_output_path, "inv-syn-abc/"), "run.sh"));
-} // GenerateInvSynTargetsAbc
-
-#endif
 
 }; // namespace ilang

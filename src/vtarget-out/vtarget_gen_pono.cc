@@ -95,11 +95,11 @@ VlgSglTgtGen_Pono::VlgSglTgtGen_Pono(
     const std::vector<std::string>& implementation_srcs,
     const std::vector<std::string>& implementation_include_path,
     const RtlVerifyConfig& vtg_config, ModelCheckerSelection vbackend,
-    const target_type_t& target_tp, advanced_parameters_t* adv_ptr)
+    const target_type_t& target_tp)
     : VlgSglTgtGen(output_path, instr_ptr, ila_ptr, refinement, _vlg_info_ptr,
                    wrapper_name, implementation_srcs,
-                   implementation_include_path, vtg_config, vbackend, target_tp,
-                   adv_ptr) {}
+                   implementation_include_path, vtg_config, vbackend, target_tp
+                   ) {}
 
 /// Add an assumption
 void VlgSglTgtGen_Pono::add_a_direct_assumption(const std::string& aspt,

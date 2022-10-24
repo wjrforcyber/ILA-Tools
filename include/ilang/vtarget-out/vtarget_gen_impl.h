@@ -23,7 +23,6 @@
 #include <ilang/config.h>
 #include <ilang/ila/instr_lvl_abs.h>
 #include <ilang/rfmap-in/rfmap_typecheck.h>
-#include <ilang/smt-inout/yosys_smt_parser.h>
 #include <ilang/verilog-in/verilog_analysis_wrapper.h>
 #include <ilang/verilog-out/verilog_gen.h>
 #include <ilang/vtarget-out/directive.h>
@@ -54,12 +53,11 @@ public:
   // --------------------- TYPE DEFINITION ------------------------ //
   /// Type of the target
   typedef enum { INVARIANTS, INSTRUCTIONS, INV_SYN_DESIGN_ONLY } target_type_t;
+  // TODO: FIXME: we will remove INV_SYN_DESIGN_ONLY in the future
   /// Per func apply counter
   typedef std::map<std::string, unsigned> func_app_cnt_t;
   /// Type of record of extra info of a signal
   using ex_info_t = VlgVerifTgtGenBase::ex_info_t;
-  /// Type of advanced parameter
-  using advanced_parameters_t = VlgVerifTgtGenBase::advanced_parameters_t;
 
 public:
   // --------------------- CONSTRUCTOR ---------------------------- //
@@ -85,7 +83,7 @@ public:
       const std::vector<std::string>& implementation_srcs,
       const std::vector<std::string>& implementation_include_path,
       const RtlVerifyConfig& vtg_config, ModelCheckerSelection backend,
-      const target_type_t& target_tp, advanced_parameters_t* adv_ptr);
+      const target_type_t& target_tp);
 
   /// Destructor: do nothing , most importantly it is virtual
   virtual ~VlgSglTgtGen() {}
@@ -126,8 +124,6 @@ protected:
   unsigned max_bound;
   /// the width of the counter
   unsigned cnt_width;
-  /// to store the advanced parameter configurations
-  advanced_parameters_t* _advanced_param_ptr;
   /// has guessed synthesized invariant
   const bool has_gussed_synthesized_invariant;
   /// has confirmed synthesized invariant
@@ -300,9 +296,6 @@ protected:
   void ConstructWrapper_translate_property_and_collect_all_rtl_connection_var();
 
   // -------------------------------------------------------------------------
-  /// Add invariants as assumption/assertion when target is inv_syn_design_only
-  void
-  ConstructWrapper_add_inv_assumption_or_assertion_target_inv_syn_design_only();
 
   /// Sometimes you need to add some signals that only appeared in Instruction
   /// target
@@ -311,10 +304,6 @@ protected:
 protected:
   /// get the ila module instantiation string
   std::string ConstructWrapper_get_ila_module_inst();
-  /// add an invariant object as assertion
-  void add_inv_obj_as_assertion(InvariantObject* inv_obj);
-  /// add an invariant object as an assumption
-  void add_inv_obj_as_assumption(InvariantObject* inv_obj);
   /// add rf inv as assumptions (if there are)
   void add_rf_inv_as_assumption();
   /// add rf inv as assumptions (if there are)
@@ -482,10 +471,6 @@ class VlgVerifTgtGen : public VlgVerifTgtGenBase {
   // --------------------- TYPE DEFINITIONS ---------------------------- //
   /// Type of a target
   using target_type_t = VlgSglTgtGen::target_type_t;
-  /// Type of advanced parameter
-  using advanced_parameters_t = VlgVerifTgtGenBase::advanced_parameters_t;
-  /// Type of chc target
-  using _chc_target_t = VlgVerifTgtGenBase::_chc_target_t;
 
 public:
   // --------------------- CONSTRUCTOR ---------------------------- //
@@ -503,8 +488,7 @@ public:
                  const std::string& implementation_top_module,
                  const rfmap::VerilogRefinementMap& refinement,
                  const std::string& output_path, const InstrLvlAbsPtr& ila_ptr,
-                 ModelCheckerSelection backend, const RtlVerifyConfig& vtg_config,
-                 advanced_parameters_t* adv_ptr = NULL);
+                 ModelCheckerSelection backend, const RtlVerifyConfig& vtg_config);
 
   /// no copy constructor, please
   VlgVerifTgtGen(const VlgVerifTgtGen&) = delete;
@@ -538,8 +522,6 @@ protected:
   VerilogGenerator::VlgGenConfig _cfg;
   /// to store the configuration
   RtlVerifyConfig _vtg_config;
-  /// to store the advanced parameter configurations
-  advanced_parameters_t* _advanced_param_ptr;
   /// to store the generate script name
   std::vector<std::string> runnable_script_name;
 
@@ -552,19 +534,6 @@ public:
   bool in_bad_state(void) const { return _bad_state; }
   /// get vlg-module instance name
   std::string GetVlgModuleInstanceName() const { return "RTL"; }
-
-#if 0
-  /// generate invariant synthesis target
-  void GenerateInvSynTargetsAbc(bool useGla, bool useCorr, bool useAiger);
-  /// generate inv-syn target
-  std::shared_ptr<smt::YosysSmtParser>
-  GenerateInvSynTargets(synthesis_backend_selector s_backend);
-  /// generate inv-enhance target
-  std::shared_ptr<smt::YosysSmtParser>
-  GenerateInvSynEnhanceTargets(const InvariantInCnf& cnf);
-  /// just to get the smt info
-  std::shared_ptr<smt::YosysSmtParser> GenerateSmtTargets();
-#endif
 
   /// generate the runable script name
   const std::vector<std::string>& GetRunnableScriptName() const;

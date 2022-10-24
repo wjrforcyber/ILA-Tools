@@ -1,19 +1,23 @@
-/// \file CHC Invariant Input Parsing (a wrapper)
+/// \file Pono Invariant Input Parsing (a wrapper)
 // --- Hongce Zhang (hongcez@princeton.edu)
 
-#ifndef CHC_INV_IN_WRAPPER_H__
-#define CHC_INV_IN_WRAPPER_H__
+#ifndef PONO_INV_IN_WRAPPER_H__
+#define PONO_INV_IN_WRAPPER_H__
 
-#include <ilang/smt-inout/yosys_smt_parser.h>
+#include <ilang/vtarget-out/inv-syn/design_to_btor.h>
 
 namespace ilang {
 namespace smt {
 
 /// \brief this a base class, should not be instantiated
 class SmtlibInvariantParserBase {
+
 protected:
   // the raw result (not including the sat/unsat)
   std::string raw_string;
+  /// all local variable definitions
+  std::map<std::string,std::string> local_var_defs;
+
 
 public:
   // -------------- CONSTRUCTOR ------------------- //
@@ -37,7 +41,9 @@ public:
   /// get the translate result
   virtual std::string GetFinalTranslateResult() const = 0;
   /// get the local variable definitions
-  // virtual const local_vars_t & GetLocalVarDefs() const = 0;
+  virtual const std::map<std::string,std::string> & GetLocalVarDefStr() const { 
+    return local_var_defs; }
+  
 
   /// return raw_string
   std::string GetRawSmtString() const;
@@ -65,10 +71,7 @@ protected:
 
 public:
   // -------------- CONSTRUCTOR ------------------- //
-  SmtlibInvariantParserInstance(YosysSmtParser* yosys_smt_info,
-                                bool _flatten_datatype, bool _flatten_hierarchy,
-                                const std::set<std::string>& _inv_pred_name,
-                                const std::string& dut_inst_name);
+  SmtlibInvariantParserInstance(const BtorStateVars &);
   /// no copy constructor
   SmtlibInvariantParserInstance(const SmtlibInvariantParserInstance&) = delete;
   /// no assignment
@@ -88,10 +91,11 @@ public:
   /// get the translate result
   std::string GetFinalTranslateResult() const;
   /// get the local variable definitions
-  // const local_vars_t & GetLocalVarDefs() const; // no available
+  const std::map<std::string,std::string> & GetLocalVarDefStr() const { 
+    return _ptr->GetLocalVarDefStr(); }
 }; // class SmtlibInvariantParserInstance
 
 }; // namespace smt
 }; // namespace ilang
 
-#endif // CHC_INV_IN_WRAPPER_H__
+#endif // PONO_INV_IN_WRAPPER_H__

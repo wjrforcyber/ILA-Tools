@@ -38,7 +38,7 @@ VlgSglTgtGen::VlgSglTgtGen(
     const std::vector<std::string>& implementation_srcs,
     const std::vector<std::string>& implementation_include_path,
     const RtlVerifyConfig& vtg_config, ModelCheckerSelection backend,
-    const target_type_t& target_tp, advanced_parameters_t* adv_ptr)
+    const target_type_t& target_tp)
     : _output_path(output_path), _instr_ptr(instr_ptr), _host(ila_ptr),
       _vlg_mod_inst_name("RTL"), _ila_mod_inst_name("ILA"),
       // default option on wrapper
@@ -89,13 +89,9 @@ VlgSglTgtGen::VlgSglTgtGen(
 
       target_type(target_tp), // whether it is
                               // invariant/instructions
-      max_bound(127), cnt_width(1), _advanced_param_ptr(adv_ptr),
-      has_gussed_synthesized_invariant(
-          adv_ptr && adv_ptr->_candidate_inv_ptr &&
-          !adv_ptr->_candidate_inv_ptr->GetVlgConstraints().empty()),
-      has_confirmed_synthesized_invariant(
-          adv_ptr && adv_ptr->_inv_obj_ptr &&
-          !adv_ptr->_inv_obj_ptr->GetVlgConstraints().empty()),
+      max_bound(127), cnt_width(1), 
+      has_gussed_synthesized_invariant(false),
+      has_confirmed_synthesized_invariant(false),
       has_rf_invariant(!refinement_map.global_invariants.empty()),
       mapping_counter(0), property_counter(0), top_mod_name(wrapper_name),
       vlg_design_files(implementation_srcs),
@@ -340,7 +336,7 @@ void VlgSglTgtGen::ConstructWrapper() {
   } else if (target_type == target_type_t::INVARIANTS) {
     ConstructWrapper_add_inv_assumption_or_assertion_target_invariant();
   } else if (target_type == target_type_t::INV_SYN_DESIGN_ONLY) {
-    ConstructWrapper_add_inv_assumption_or_assertion_target_inv_syn_design_only();
+    // ConstructWrapper_add_inv_assumption_or_assertion_target_inv_syn_design_only();
   }
 
   ILA_DLOG("VtargetGen") << "STEP:" << 6;

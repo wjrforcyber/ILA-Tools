@@ -18,7 +18,7 @@ add_subdirectory(util)
 add_subdirectory(verilog-in)
 add_subdirectory(verilog-out)
 add_subdirectory(vtarget-out)
-add_subdirectory(smt-inout)
+add_subdirectory(env-inv-in)
 add_subdirectory(rfmap-in)
 
 if(${ILANG_BUILD_SYNTH})

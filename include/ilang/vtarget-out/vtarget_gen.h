@@ -10,7 +10,6 @@
 #include <ilang/ila/instr_lvl_abs.h>
 #include <ilang/verilog-out/verilog_gen.h>
 #include <ilang/vtarget-out/inv-syn/cex_extract.h>
-#include <ilang/vtarget-out/inv-syn/inv_obj.h>
 
 namespace ilang {
 
@@ -32,36 +31,7 @@ public:
            int(ModelCheckerSelection::YOSYS);
   }
 
-  /// Type of invariant synthesis backend
-  /*enum class synthesis_backend_selector {
-    // Z3       = int(ModelCheckerSelection::Z3PDR)       ^
-  int(ModelCheckerSelection::YOSYS), // 01001 GRAIN    =
-  int(ModelCheckerSelection::GRAIN_SYGUS) ^ int(ModelCheckerSelection::YOSYS), // 01100
-    ABC      = int(ModelCheckerSelection::ABCPDR)      ^
-  int(ModelCheckerSelection::YOSYS), // 10000 ELDERICA =
-  int(ModelCheckerSelection::ELD_CEGAR)   ^ int(ModelCheckerSelection::YOSYS), // 01010
-    NOSYN    = int(ModelCheckerSelection::YOSYS) // 1000000 } ;*/
-  /// Type of the chc target
-  enum class _chc_target_t { CEX, INVCANDIDATE, GENERAL_PROPERTY };
   
-
-  /// Advanced parameters used for invariant synthesizer
-  /// should not be used by generat
-  /// NOTE: this function can be inherited
-  /// and only expose a visible interface to the outside
-  typedef struct _adv_parameters {
-    /// invariant object
-    InvariantObject* _inv_obj_ptr;
-    /// candidate invariants object
-    InvariantObject* _candidate_inv_ptr;
-    /// counterexample object
-    CexExtractor* _cex_obj_ptr;
-    /// The default constructor for default values
-    _adv_parameters()
-        : _inv_obj_ptr(NULL), _candidate_inv_ptr(NULL), _cex_obj_ptr(NULL) {}
-    /// virtual destructor
-    virtual ~_adv_parameters(){};
-  } advanced_parameters_t;
 
 public:
   // ----------------------- Constructor/Destructor ----------------------- //

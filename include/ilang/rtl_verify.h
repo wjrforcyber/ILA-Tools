@@ -23,13 +23,7 @@ namespace ilang {
     NONE = 0,
     JASPERGOLD = 2,
     YOSYS = 128, // 10000000
-    // CHC = YOSYS + 8,          // 10001000
-    // Z3PDR = CHC + 1,          // 10001001
-    // ELD_CEGAR = CHC + 2,      // 10001010
-    // GRAIN_SYGUS = CHC + 4,    // 10001100
-    // ABCPDR = YOSYS + 16,      // 10010000
     PONO = YOSYS + 32,  // 10100000
-    RELCHC = YOSYS + 64 // 11000000
   }; // enum class ModelCheckerSelection
 
 /// Verilog Target Generation Configuration
@@ -144,16 +138,6 @@ namespace ilang {
     /// be needed, but for some reason, PONO is unhappy sometimes.
     bool YosysSetUndrivenZero;
 
-    // ----------- Options for CHC Solver -------------- //
-    /// CHC, whether to turn array into individual registers
-    bool ChcWordBlastArray;
-    /// CHC, whether to force assumption on the init
-    bool ChcAssumptionsReset;
-    /// CHC, whether to force assumption on the next T
-    bool ChcAssumptionNextState;
-    /// CHC, whether to force assumption on the end T
-    bool ChcAssumptionEnd;
-
     // ----------- Options for Btor Output -------------- //
     /// in the format of "xxxx [options] %btorfile% [options]"
     /// will replace %btorfile% with the file
@@ -167,38 +151,6 @@ namespace ilang {
         bool YosysAssumptionOverlyConstrainedCheck;
     */
 
-    // ----------- Options for Z3/Grain/ABC Solver -------------- //
-    /// The path to Z3, if "z3" is not in the PATH, default empty
-    std::string Z3Path;
-    /// The path to Grain, if "grain" is not in the PATH, default empty
-    std::string GrainPath;
-    /// Grain Configuration Options
-    std::vector<std::string> GrainOptions;
-    /// FreqHorn style (cocistyple, cnfstyle)
-    bool GrainHintsUseCnfStyle;
-    /// The path to ABC, if "abc" is not in the PATH, default empty
-    std::string AbcPath;
-
-    // ----------- Extended Options for ABC Solver -------------- //
-    /// ABC option : whether to use gate-level abstraction
-    bool AbcUseGla;
-    /// ABC option : gate-level abstraction time limit
-    unsigned AbcGlaTimeLimit;
-    /// ABC option : gate-level abstraction frame limit
-    unsigned AbcGlaFrameLimit;
-    /// ABC option : whether to use correlation analysis
-    bool AbcUseCorr;
-    /// ABC option : whether to pass aiger to ABC
-    bool AbcUseAiger;
-    /// ABC option : whether to minimize invariant
-    bool AbcMinimizeInv;
-    /// ABC option : the way to handle assumptions
-    enum class AbcAssumptionStyle_t {
-      AigMiterExtraOutput =
-          0, // Use AIG's extra output to represent, cannot use with GLA
-      AssumptionRegister =
-          1 // Use extra register, may have issues in interpreting the invariant
-    } AbcAssumptionStyle;
 
     // ----------- Refinement Sanity Check Options-------------- //
     /// if true: will check if the value recorder is triggered multiple times
@@ -237,23 +189,11 @@ namespace ilang {
           InvariantSynthesisReachableCheckKeepOldInvariant(false),
           YosysSetUndrivenZero(false),
 
-          // ----------- Options for CHCs -------------- //
-          ChcWordBlastArray(true), ChcAssumptionsReset(false),
-          ChcAssumptionNextState(false), ChcAssumptionEnd(false),
-
           // ----------- Options for Btor Output -------------- //
           /// CHC, whether to turn array into individual registers
           BtorSingleProperty(true),
           /// CHC, whether to force assumption on the init
           BtorAddCommentsInOutputs(false),
-
-          // ----------- Options for Z3/Grain/ABC Solver -------------- //
-          GrainHintsUseCnfStyle(true),
-
-          // ----------- Options for ABC -------------- //
-          AbcUseGla(false), AbcGlaTimeLimit(500), AbcGlaFrameLimit(200),
-          AbcUseCorr(false), AbcUseAiger(true), AbcMinimizeInv(false),
-          AbcAssumptionStyle(AbcAssumptionStyle_t::AigMiterExtraOutput),
 
           // ----------- Options for Refinement Sanity Checks -------------- //
           SanityCheck_ValueRecorderOverlyConstrained(true),

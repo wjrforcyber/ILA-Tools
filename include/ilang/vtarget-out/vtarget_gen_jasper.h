@@ -14,8 +14,6 @@ namespace ilang {
 class VlgSglTgtGen_Jasper : public VlgSglTgtGen {
   /// using the target type
   using target_type_t = VlgSglTgtGen::target_type_t;
-  /// Type of advanced parameter
-  using advanced_parameters_t = VlgVerifTgtGenBase::advanced_parameters_t;
 
 public:
   // --------------------- CONSTRUCTOR ---------------------------- //
@@ -43,7 +41,7 @@ public:
       const std::vector<std::string>& implementation_srcs,
       const std::vector<std::string>& include_dirs,
       const RtlVerifyConfig& vtg_config, ModelCheckerSelection backend,
-      const target_type_t& target_tp, advanced_parameters_t* adv_ptr);
+      const target_type_t& target_tp);
 
 protected:
   /// internal storage of problems

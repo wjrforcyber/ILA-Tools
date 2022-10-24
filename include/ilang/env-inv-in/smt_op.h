@@ -17,20 +17,20 @@
 #define CHECK_BOOL_ONE_ARG(idx, args)                                          \
   ILA_CHECK(idx.empty());                                                     \
   ILA_CHECK(args.size() == 1);                                                \
-  ILA_CHECK(get_term(args[0])._type.is_bool())
+  ILA_CHECK(get_term(args[0])._type == var_type(1))
 
 #define CHECK_BOOL_TWO_ARG(idx, args)                                          \
   ILA_CHECK((idx).empty());                                                   \
   ILA_CHECK((args).size() == 2);                                              \
-  ILA_CHECK(get_term((args)[0])._type.is_bool());                             \
-  ILA_CHECK(get_term((args)[1])._type.is_bool())
+  ILA_CHECK(get_term((args)[0])._type == var_type(1));                             \
+  ILA_CHECK(get_term((args)[1])._type == var_type(1))
 
 #define CHECK_BV_TWO_ARG(idx, args)                                            \
   ILA_CHECK((idx).empty());                                                   \
   ILA_CHECK((args).size() == 2);                                              \
   ILA_CHECK(get_term((args)[0])._type.is_bv());                               \
   ILA_CHECK(get_term((args)[1])._type.is_bv());                               \
-  ILA_CHECK(var_type::eqtype(get_term((args)[0])._type, get_term((args)[1])._type))
+  ILA_CHECK(get_term((args)[0])._type == get_term((args)[1])._type)
 
 #define CHECK_BV_COMPARE(idx, args) CHECK_BV_TWO_ARG(idx, args)
 
@@ -50,7 +50,7 @@
   if (!IN(search_name, name2term_map)) {                                       \
     return new_term(                                                           \
         search_name,                                                           \
-        SmtTermInfoVerilog((vlg_expr), var_type(var_type::tp::Bool, 1, ""),    \
+        SmtTermInfoVerilog((vlg_expr), var_type(1),    \
                            this));                                             \
   }                                                                            \
   return (name2term_map.at(search_name))
@@ -59,7 +59,7 @@
   bool first = true;                                                           \
   for (auto&& arg : (args)) {                                                  \
     const auto & t = get_term(arg);                                            \
-    ILA_CHECK(t._type._type == (TYPE));                                       \
+    ILA_CHECK(t._type == (TYPE));                                       \
     if (first)                                                                 \
       (vlg_expr) = "(" +t._translate + ")";                                    \
     else                                                                       \
@@ -67,9 +67,23 @@
     first = false;                                                             \
   }
 
+
+#define MAKE_MULTI_OP_BV(vlg_expr, args, op)                             \
+  bool first = true;                                                           \
+  for (auto&& arg : (args)) {                                                  \
+    const auto & t = get_term(arg);                                            \
+    ILA_CHECK(t._type.is_bv());                                       \
+    if (first)                                                                 \
+      (vlg_expr) = "(" +t._translate + ")";                                    \
+    else                                                                       \
+      (vlg_expr) += " " op "(" + t._translate + ")";                           \
+    first = false;                                                             \
+  }
+
+
 #define MAKE_BV_RESULT_TYPE_AS_ARGN(vlg_expr, args, n)                         \
   std::string search_name =                                                    \
-      "##bv" + std::to_string(get_term(args[(n)])._type._width) + "_" + (vlg_expr);     \
+      "##bv" + std::to_string(get_term(args[(n)])._type.width) + "_" + (vlg_expr);     \
   if (!IN(search_name, name2term_map)) {                                       \
     return new_term(                                      \
         search_name, SmtTermInfoVerilog(vlg_expr, get_term(args[(n)])._type, this));   \

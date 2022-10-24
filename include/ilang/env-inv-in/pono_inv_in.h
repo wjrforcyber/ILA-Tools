@@ -1,11 +1,10 @@
-/// \file CHC Invariant Input Parsing
+/// \file Pono Invariant Input Parsing
 // --- Hongce Zhang (hongcez@princeton.edu)
 
-#ifndef CHC_INV_IN_H__
-#define CHC_INV_IN_H__
+#ifndef PONO_INV_IN_H__
+#define PONO_INV_IN_H__
 
-#include <ilang/smt-inout/chc_inv_in_wrapper.h>
-#include <ilang/smt-inout/yosys_smt_parser.h>
+#include <ilang/env-inv-in/pono_inv_in_wrapper.h>
 
 #include <functional>
 #include <map>
@@ -23,12 +22,14 @@ namespace smt {
 class SmtlibInvariantParser;
 
 
+typedef rfmap::RfMapVarType var_type;
+
 /// \brief the type of term info that needs to be carried
 template <class T> struct SmtTermInfo {
   /// the corresponding translation (for verilog: std::string)
   T _translate;
   /// the type uptill now
-  var_type _type;
+  rfmap::RfMapVarType _type;
   /// the context -- all predefined datatypes/predicates/functions
   SmtlibInvariantParser* _context;
   // --------------- CONSTRUCTOR -------------- //
@@ -54,7 +55,7 @@ public:
   /// the type for term_allocation
   typedef std::vector<SmtTermInfoVerilog> term_allocation_pool_t;
   /// the type for sort allocation
-  typedef std::vector<var_type> sort_allocation_pool_t;
+  typedef std::vector<rfmap::RfMapVarType> sort_allocation_pool_t;
   /// the pointer type for terms (should not directly use the pointers)
   typedef size_t TermPtrT; // typedef term_container_t::iterator TermPtrT;
   /// the pointer type for sort
@@ -72,15 +73,10 @@ public:
   typedef std::map<std::string, TermPtrT> local_vars_t;
   /// search_string to local var name
   typedef std::map<std::string, std::string> local_vars_lookup_t;
-  /// the container of all the free variables
-  typedef std::map<std::string, int> free_vars_t;
 
 public:
   // -------------- CONSTRUCTOR ------------------- //
-  SmtlibInvariantParser(YosysSmtParser* yosys_smt_info, bool _flatten_datatype,
-                        bool _flatten_hierarchy,
-                        const std::set<std::string>& _inv_pred_name,
-                        const std::string& dut_instance_name,
+  SmtlibInvariantParser(const BtorStateVars &,
                         bool discourageOutOfScopeVariable = true);
   /// no copy constructor
   SmtlibInvariantParser(const SmtlibInvariantParser&) = delete;
@@ -101,8 +97,6 @@ public:
   std::string GetFinalTranslateResult() const override;
   /// get the local variable definitions
   const local_vars_t& GetLocalVarDefs() const;
-  /// get the free variable definitions
-  const free_vars_t& GetFreeVarDefs() const;
 
 protected:
   // ----------------- MEMBERS ------------------- //
@@ -128,19 +122,13 @@ protected:
   local_vars_t local_vars;
   /// to hold map for search string -> local variables
   local_vars_lookup_t local_vars_lookup;
-  /// to hold the free variables
-  free_vars_t free_vars;
   /// the final translated result
   std::string final_translate_result;
   /// we need to store the right vlog instance name
   const std::string dut_verilog_instance_name;
 
   /// a pointer to get the knowlege of the context
-  YosysSmtParser* design_smt_info_ptr;
-  /// whether we are on a design w. datatype flattened
-  const bool datatype_flattened;
-  /// whether we are on a design w. hierarchy flattened
-  const bool hierarchy_flattened;
+  const BtorStateVars & design_smt_info_ptr;
   /// discourage out-of-scope variable referall
   const bool no_outside_var_refer;
 
@@ -155,6 +143,9 @@ protected:
   TermPtrT new_term(const std::string & search_name, const SmtTermInfoVerilog & term);
   /// From pointer to sort
   const var_type & get_sort(SortPtrT ptr) const;
+
+  /// populate local var def cache
+  void populate_local_vardef_cache();
 
 public:
   /// From pointer to term
@@ -260,4 +251,4 @@ public:
 }; // namespace smt
 }; // namespace ilang
 
-#endif // CHC_INV_IN_H__
+#endif // PONO_INV_IN_H__

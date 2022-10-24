@@ -6,9 +6,9 @@
 #ifndef CHC_INV_CALLBACK_FN_H__
 #define CHC_INV_CALLBACK_FN_H__
 
-#include <ilang/smt-inout/chc_inv_in.h>
-#include <ilang/util/log.h>
 #include <ilang/util/str_util.h>
+#include <ilang/env-inv-in/pono_inv_in.h>
+#include <ilang/util/log.h>
 
 namespace ilang {
 namespace smt {

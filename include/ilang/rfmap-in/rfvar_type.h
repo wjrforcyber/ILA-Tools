@@ -24,12 +24,22 @@ struct RfMapVarType {
   /// for unknown type
   RfMapVarType() : type(TYPE::UNKNOWN) {}
   /// for bit-vector type
-  RfMapVarType(unsigned w) : type(TYPE::BV), width(w) {}
+  RfMapVarType(unsigned w) : type(TYPE::BV), width(w), addr_width(0), data_width(0) {}
   /// for array type
   RfMapVarType(unsigned a, unsigned d)
-      : type(TYPE::MEM), addr_width(a), data_width(d) {}
+      : type(TYPE::MEM), width(0), addr_width(a), data_width(d) {}
   unsigned unified_width() const {
     return type == RfMapVarType::TYPE::BV ? width : data_width;
+  }
+
+  bool operator==(const RfMapVarType & rhs) const{
+    if(type == TYPE::UNKNOWN || rhs.type == TYPE::UNKNOWN)
+      return false;
+    if(type != rhs.type)
+      return false;
+    if(type == TYPE::BV)
+      return width == rhs.width;
+    return addr_width == rhs.addr_width && data_width == rhs.data_width;
   }
 
   std::string to_string() const {

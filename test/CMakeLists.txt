@@ -72,10 +72,8 @@ package_add_test(${ILANG_TEST_MAIN}
   t_mngr_absknob.cc
   t_pass.cc
   t_portable.cc
-  t_smt_in.cc
   t_smt_shim.cc
   t_smt_switch_itf.cc
-  t_smt_trans.cc
   t_rfexpr_smt_out.cc
   t_rfmap_proc.cc
   t_sort.cc

@@ -1,8 +1,8 @@
 /// \file CHC Invariant Input Parsing (a wrapper)
 // --- Hongce Zhang (hongcez@princeton.edu)
 
-#include <ilang/smt-inout/chc_inv_in.h>
-#include <ilang/smt-inout/chc_inv_in_wrapper.h>
+#include <ilang/env-inv-in/pono_inv_in.h>
+#include <ilang/env-inv-in/pono_inv_in_wrapper.h>
 #include <ilang/util/log.h>
 #include <ilang/util/str_util.h>
 
@@ -52,14 +52,10 @@ void SmtlibInvariantParserBase::parse_local_var_name_to_set_counter(const std::s
 
 // -------------- CONSTRUCTOR ------------------- //
 SmtlibInvariantParserInstance::SmtlibInvariantParserInstance(
-    YosysSmtParser* yosys_smt_info, bool _flatten_datatype,
-    bool _flatten_hierarchy, const std::set<std::string>& _inv_pred_name,
-    const std::string& dut_inst_name)
+    const BtorStateVars & btorinfo)
     : _ptr(NULL) {
 
-  _ptr = new SmtlibInvariantParser(yosys_smt_info, _flatten_datatype,
-                                   _flatten_hierarchy, _inv_pred_name,
-                                   dut_inst_name);
+  _ptr = new SmtlibInvariantParser(btorinfo);
 
   ILA_NOT_NULL(_ptr);
 }

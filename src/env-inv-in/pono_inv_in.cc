@@ -9,8 +9,8 @@
 #include <ilang/util/posix_emu.h>
 #endif
 
-#include <ilang/smt-inout/chc_inv_callback_fn.h>
-#include <ilang/smt-inout/chc_inv_in.h>
+#include <ilang/env-inv-in/pono_inv_callback_fn.h>
+#include <ilang/env-inv-in/pono_inv_in.h>
 #include <ilang/util/container_shortcut.h>
 
 #include <cstdio>
@@ -22,21 +22,12 @@ namespace smt {
 // -------------- SmtlibInvariantParser ---------------- //
 
 SmtlibInvariantParser::SmtlibInvariantParser(
-    YosysSmtParser* yosys_smt_info, bool _flatten_datatype,
-    bool _flatten_hierarchy, const std::set<std::string>& _inv_pred_name,
-    const std::string& dut_instance_name, bool discourageOutOfScopeVariable)
+    const BtorStateVars & btor2info, bool discourageOutOfScopeVariable)
     :
 
       parser_wrapper(new smtlib2_abstract_parser()),
-      inv_pred_name(_inv_pred_name),
-      dut_verilog_instance_name(dut_instance_name),
-      design_smt_info_ptr(yosys_smt_info),
-      datatype_flattened(_flatten_datatype),
-      hierarchy_flattened(_flatten_hierarchy),
+      design_smt_info_ptr(btor2info),
       no_outside_var_refer(discourageOutOfScopeVariable), _bad_state(false) {
-
-  ILA_NOT_NULL(yosys_smt_info);
-  // the first element's address should be the outer structure's address
 
   if (!parser_wrapper) {
     _bad_state = true;
@@ -149,7 +140,7 @@ SmtlibInvariantParser::SmtlibInvariantParser(
   smtlib2_term_parser_set_handler(tp, "rotate_right",
                                   smt_to_vlg_mk_rotate_right);
 
-  sort_pool.push_back(var_type(var_type::tp::BV,0,"ERROR")); // should never use this
+  sort_pool.push_back(var_type()); // should never use this : UNKNOWN type
   term_pool.push_back(SmtTermInfoVerilog("__ERROR__", sort_pool.at(0),this)); // should never use this
 }
 
@@ -208,7 +199,7 @@ void SmtlibInvariantParser::assert_formula(TermPtrT resultidx) {
 void SmtlibInvariantParser::declare_function(const std::string& name,
                                              SortPtrT sort) {
   ILA_ASSERT(false)
-      << "Bug: CHC solver should not generate output containing declare-fun!";
+      << "Bug: Pono should not generate output containing declare-fun!";
 }
 
 void SmtlibInvariantParser::define_function(
@@ -216,23 +207,21 @@ void SmtlibInvariantParser::define_function(
     SortPtrT ret_type, TermPtrT func_body) {
 
   ILA_ASSERT(false)
-      << "Bug: CHC solver should not generate output containing define-fun!";
+      << "Bug: Pono should not generate output containing define-fun!";
   // we expect the forall style // for SyGuS, it is the opposite
 } // define_function
 
 /// call back function to handle (forall
 SmtlibInvariantParser::TermPtrT SmtlibInvariantParser::push_quantifier_scope() {
-  quantifier_def_stack.push_back(quantifier_temp_def_t());
-  quantifier_var_def_idx_stack.push_back(0);
-  return 0; // no body cares this
+  ILA_CHECK(false)
+      << "push_quantifier_scope should not appear in Grain CHC result";
+  return 0;
 }
 /// call back function to handle ) of forall
 SmtlibInvariantParser::TermPtrT SmtlibInvariantParser::pop_quantifier_scope() {
-  // will not to deallocate term pool at this point
-  quantifier_def_stack.pop_back();
-  quantifier_var_def_idx_stack.pop_back();
-  return 0; // if we return null, it will not overwrite the
-                  // make_forall_term result
+  ILA_CHECK(false)
+      << "pop_quantifier_scope should not appear in Grain CHC result";
+  return 0;
 }
 
 /// call back function to create a sort
@@ -241,44 +230,24 @@ SmtlibInvariantParser::make_sort(const std::string& name,
                                            const std::vector<int>& idx) {
   // ILA_ASSERT(! quantifier_def_stack.empty());
   // ILA_ASSERT(! quantifier_var_def_idx_stack.empty());
-  if (datatype_flattened) {
-    // should should only be BitVec or Bool
-    if (name == "Bool") {
-      if (!IN("Bool", name2sort_map)) {
-        sort_pool.push_back(var_type(var_type::tp::Bool, 1, ""));
-        name2sort_map.emplace(std::string("Bool"), sort_pool.size()-1);
-      }
-      return name2sort_map.at("Bool");
-    } else if (name == "BitVec") {
-      ILA_CHECK(idx.size() == 1);
-      ILA_CHECK(idx[0] > 0);
-      std::string sortIdxName = "BV" + std::to_string(idx[0]);
-      if (!IN(sortIdxName, name2sort_map)) 
-        return new_sort(sortIdxName, var_type(var_type::tp::BV, idx[0], ""));
-      return name2sort_map.at(sortIdxName);
+
+  if (name == "Bool") {
+    if (!IN("Bool", name2sort_map)) {
+      sort_pool.push_back(var_type(1));
+      name2sort_map.emplace(std::string("Bool"), sort_pool.size()-1);
     }
-    ILA_CHECK(false) << "Unknown sort:" << name << " in flattened smt.";
-    return 0; // should not be reachable
-  } else {
-    // if not flattened, there should only be one sort
-    const auto& module_def_order = design_smt_info_ptr->get_module_def_orders();
-
-    std::string top_module = module_def_order.back();
-    std::string top_module_sort;
-    ILA_DLOG("SmtlibInvariantParser.make_sort") << top_module << std::endl;
-    top_module_sort = top_module + std::string("_s");
-    ILA_DLOG("SmtlibInvariantParser.make_sort") << top_module_sort << std::endl;
-
-    ILA_CHECK(name == top_module_sort || name == "|" + top_module_sort + "|")
-        << "Unknown sort:" << name << " in unflattened smt."
-        << " Expecting:" << top_module_sort;
-
-    if (!IN(top_module_sort, name2sort_map))
-      return new_sort(top_module_sort, 
-                      var_type(var_type::tp::Datatype, 0, top_module));
-    
-    return name2sort_map.at(top_module_sort);
+    return name2sort_map.at("Bool");
+  } else if (name == "BitVec") {
+    ILA_CHECK(idx.size() == 1);
+    ILA_CHECK(idx[0] > 0);
+    std::string sortIdxName = "BV" + std::to_string(idx[0]);
+    if (!IN(sortIdxName, name2sort_map)) 
+      return new_sort(sortIdxName, var_type(idx[0]));
+    return name2sort_map.at(sortIdxName);
   }
+  ILA_CHECK(false) << "Unknown sort:" << name << " in flattened smt.";
+  return 0; // should not be reachable
+
 } // make_sort
 
 
@@ -292,11 +261,10 @@ SmtlibInvariantParser::make_parametric_sort(const std::string& name, const std::
   ILA_CHECK(sort1.is_bv()) << "Parametric Array has non-BV parameter type";
   ILA_CHECK(sort2.is_bv()) << "Parametric Array has non-BV parameter type";
   
-  auto sort_name("A" + sort1.toString()+" -> " + sort2.toString());
+  auto sort_name("A" + sort1.to_string()+" -> " + sort2.to_string());
   auto sort_pos = name2sort_map.find(sort_name);
   if (sort_pos == name2sort_map.end()) {
-    return new_sort(sort_name, var_type(
-      var_type::tp::Array, sort1.GetBoolBvWidth(), sort2.GetBoolBvWidth(), ""));
+    return new_sort(sort_name, var_type(sort1.unified_width(), sort2.unified_width()));
   } else 
     return (sort_pos->second);
 }
@@ -310,23 +278,7 @@ void SmtlibInvariantParser::declare_quantified_variable(const std::string& name,
   ILA_ASSERT(!quantifier_def_stack.empty());
   ILA_ASSERT(!quantifier_var_def_idx_stack.empty());
   // I assume it has nothing to do with hierarchy flattening
-  auto& top = quantifier_def_stack.back();
-  if (datatype_flattened) {
-    // we need to extract the name from verilog
-    auto top_module = design_smt_info_ptr->get_module_def_orders().back();
-    auto vlg_name = (design_smt_info_ptr->get_module_flatten_dt(
-                         top_module)[quantifier_var_def_idx_stack.back()])
-                        .verilog_name;
-    top.emplace(name, 
-      new_term(name, SmtTermInfoVerilog(vlg_name, get_sort(sort), this)));
-    quantifier_var_def_idx_stack.back()++;
-  } else {
-    // if not flattened, there should only be one sort
-    top.emplace(name, 
-      new_term(name, SmtTermInfoVerilog("", get_sort(sort), this)));
-    ILA_DLOG("SmtlibInvariantParser.declare_quantified_variable")
-        << "make var :" << name << std::endl;
-  }
+  ILA_CHECK(false) << "not implemented, declaring var: " <<  name;
 }
 
 SmtlibInvariantParser::TermPtrT
@@ -355,8 +307,8 @@ SmtlibInvariantParser::TermPtrT
 SmtlibInvariantParser::mk_function(const std::string& name, SortPtrT sort,
                                    const std::vector<int>& idx,
                                    const std::vector<TermPtrT>& args) {
-  // we don't really rely on the sort here: actually it should be NULL
-  ILA_DLOG("SmtlibInvariantParser.mk_function")
+   // we don't really rely on the sort here: actually it should be NULL
+  ILA_DLOG("GrainInvariantParser.mk_function")
       << "make func:" << name << ", #arg" << args.size() << std::endl;
   if (args.empty() && idx.empty()) {
     // first let's check if it is referring to a quantifier-bound variable
@@ -366,66 +318,25 @@ SmtlibInvariantParser::mk_function(const std::string& name, SortPtrT sort,
     ILA_CHECK(false) << "unknown symbol:" << name;
     return 0; // no use
   }
-  // if it is function call
-  if (datatype_flattened) {
-    if (IN(name, inv_pred_name))
-      return mk_true("true", 0, {}, {});
-    ILA_CHECK(false) << "Fun:" << name << " called in flattened smt.";
-    return 0; // should not be reachable
-  } else {
-    ILA_CHECK(args.size() == 1);
-    const SmtTermInfoVerilog & t = get_term(args[0]);
-    ILA_CHECK(t._type.is_datatype());
 
-    if (IN(name, inv_pred_name))
-      return mk_true("true", 0, {}, {});
+  // TODO: here check the variable and term
+  if(IN(name, name2term_map)) {
+    return name2term_map.at(name);
+  }
 
-    // get it from the module_name
-    const auto& module_name = t._type.module_name;
-    const auto& dts = design_smt_info_ptr->get_module_flatten_dt(module_name);
-    for (auto&& dt : dts) {
-      if (dt.internal_name == name || dt.internal_name == "|" + name + "|") {
-        // make the new variable here
-        std::string search_name;
-        if (dt._type.is_bool())
-          search_name = "##bool_";
-        else if (dt._type.is_bv())
-          search_name = "##bv" + std::to_string(dt._type._width) + "_";
-        else
-          ILA_CHECK(false) << "unexpected type!";
+  std::string vlg_name = name;
+  if (name.front() == '|' && name.back() == '|') {
+    ILA_CHECK(name.size() > 2) << "Unexpected empty name: " << name;
+    vlg_name = name.substr(
+        1, name.length() -
+               2); // verilog-name should be extracted from the name part
+  }
+  auto pos = design_smt_info_ptr.state_vars.find(vlg_name);
+  ILA_CHECK(pos != design_smt_info_ptr.state_vars.end())
+    << "unknown symbol for function:" << name;
+  auto var_sort = pos->second;
+  return new_term(name, SmtTermInfoVerilog("RTL." + vlg_name, var_sort, this));
 
-        search_name += dt.verilog_name;
-        auto repl_name = dt.verilog_name;
-        // here we need to make sure it is a good name
-        if (!dut_verilog_instance_name.empty() && no_outside_var_refer) {
-          auto dot_pos = dt.verilog_name.find('.');
-          if (dot_pos != std::string::npos &&
-              dt.verilog_name.substr(0, dot_pos) != dut_verilog_instance_name) {
-
-            repl_name = ReplaceAll(dt.verilog_name, ".", "_dot_");
-            ILA_ERROR_IF(IN(repl_name, free_vars))
-                << "Bug free var name reappearing: " << repl_name;
-            // not possible for datatype here
-            int width =
-                dt._type._type == var_type::tp::BV ? dt._type._width : 1;
-            free_vars.insert(std::make_pair(repl_name, width));
-
-            ILA_ERROR << "Invariant refers to out-of-scope var : "
-                      << dt.verilog_name << " replaced w. " << repl_name;
-          } else if (dot_pos == std::string::npos) {
-            ILA_ERROR << "Invariant refers to wrapper var: " << dt.verilog_name;
-          }
-        } // check out-of-scope name
-
-        if (!IN(search_name, name2term_map)) {
-          return new_term(search_name, SmtTermInfoVerilog(repl_name, dt._type, this));
-        }
-        return name2term_map.at(search_name);
-      } // if name matched
-    }   // for all datatypes
-    ILA_CHECK(false) << "unknown symbol:" << name;
-    return 0; // should not be reachable
-  }                 // end of else
 } // mk_function
 
 /// call back function to make a number term
@@ -451,18 +362,18 @@ SmtlibInvariantParser::mk_number(const std::string& rep,
   std::string name = "##bv" + vlg_expr;
   if (!IN(name, name2term_map)) {
     return new_term(name, SmtTermInfoVerilog(vlg_expr,
-                                 var_type(var_type::tp::BV, width, ""), this));
+                                 var_type(width), this));
   }
   // return the reference from the container
   return name2term_map.at(name);
 } // mk_number
 
-#include <ilang/smt-inout/smt_op.h>
-
 #define DEFINE_OPERATOR(name)                                                  \
   SmtlibInvariantParser::TermPtrT SmtlibInvariantParser::mk_##name(                          \
       const std::string& symbol, SortPtrT sort, const std::vector<int>& idx,  \
       const std::vector<TermPtrT>& args)
+
+#include <ilang/env-inv-in/smt_op.h>
 
 DEFINE_OPERATOR(true) {
   CHECK_EMPTY_PARAM(idx, args);
@@ -477,7 +388,7 @@ DEFINE_OPERATOR(false) {
 DEFINE_OPERATOR(and) {
   CHECK_BOOL_MULTI_ARG(idx, args);
   std::string vlg_expr;
-  MAKE_MULTI_OP(vlg_expr, args, var_type::tp::Bool, "&&");
+  MAKE_MULTI_OP(vlg_expr, args, var_type(1), "&&");
   MAKE_BOOL_RESULT(vlg_expr);
 }
 
@@ -485,7 +396,7 @@ DEFINE_OPERATOR(or) {
   CHECK_BOOL_MULTI_ARG(idx, args);
 
   std::string vlg_expr;
-  MAKE_MULTI_OP(vlg_expr, args, var_type::tp::Bool, "||");
+  MAKE_MULTI_OP(vlg_expr, args, var_type(1), "||");
   MAKE_BOOL_RESULT(vlg_expr);
 }
 
@@ -509,7 +420,7 @@ DEFINE_OPERATOR(eq) {
   ILA_CHECK(args.size() == 2); // we don't require they are bv
   const auto & t0 = get_term(args[0]);
   const auto & t1 = get_term(args[1]);
-  ILA_CHECK(var_type::eqtype(t0._type, t1._type));
+  ILA_CHECK(t0._type == t1._type);
 
 
   std::string vlg_expr =
@@ -523,13 +434,13 @@ DEFINE_OPERATOR(ite) {
   const auto & t0 = get_term(args[0]);
   const auto & t1 = get_term(args[1]);
   const auto & t2 = get_term(args[2]);
-  ILA_CHECK(t0._type.is_bool());
-  ILA_CHECK(var_type::eqtype(t1._type, t2._type));
+  ILA_CHECK(t0._type == var_type(1));
+  ILA_CHECK(t1._type == t2._type);
 
   auto vlg_expr = "(" + t0._translate + ") ? (" + t1._translate +
                   ") : (" + t2._translate + ")";
 
-  if (t1._type.is_bool()) {
+  if (t1._type == var_type(1)) {
     MAKE_BOOL_RESULT(vlg_expr);
   } else if (t1._type.is_bv()) {
     MAKE_BV_RESULT_TYPE_AS_ARGN(vlg_expr, args, 1);
@@ -555,7 +466,7 @@ DEFINE_OPERATOR(nand) {
   ILA_CHECK(args.size() >= 2);
 
   std::string vlg_expr;
-  MAKE_MULTI_OP(vlg_expr, args, var_type::tp::Bool, "&&");
+  MAKE_MULTI_OP(vlg_expr, args, var_type(1), "&&");
   vlg_expr = "!(" + vlg_expr + ")";
 
   MAKE_BOOL_RESULT(vlg_expr);
@@ -576,7 +487,7 @@ DEFINE_OPERATOR(concat) {
     else
       (vlg_expr) += " , " + t._translate;
     first = false;
-    total_width += t._type._width;
+    total_width += t._type.width;
   } // arg
   vlg_expr += "}";
 
@@ -584,7 +495,7 @@ DEFINE_OPERATOR(concat) {
       "##bv" + std::to_string(total_width) + "_" + (vlg_expr);
   if (!IN(search_name, name2term_map)) {
     return new_term(search_name, SmtTermInfoVerilog(vlg_expr,
-                           var_type(var_type::tp::BV, total_width, ""), this));
+                           var_type(total_width), this));
   } // not in, then add it
   return name2term_map.at(search_name);
 } // concat
@@ -599,7 +510,7 @@ DEFINE_OPERATOR(bvand) {
   CHECK_BV_MULTI_ARG(idx, args);
 
   std::string vlg_expr;
-  MAKE_MULTI_OP(vlg_expr, args, var_type::tp::BV, "&");
+  MAKE_MULTI_OP_BV(vlg_expr, args, "&");
   MAKE_BV_RESULT_TYPE_AS_ARG0(vlg_expr, args);
 } // bvand
 
@@ -607,7 +518,7 @@ DEFINE_OPERATOR(bvnand) {
   CHECK_BV_MULTI_ARG(idx, args);
 
   std::string vlg_expr;
-  MAKE_MULTI_OP(vlg_expr, args, var_type::tp::BV, "&");
+  MAKE_MULTI_OP_BV(vlg_expr, args,  "&");
   vlg_expr = "~(" + vlg_expr + ")";
   MAKE_BV_RESULT_TYPE_AS_ARG0(vlg_expr, args);
 } // bvnand
@@ -615,13 +526,13 @@ DEFINE_OPERATOR(bvor) {
   CHECK_BV_MULTI_ARG(idx, args);
 
   std::string vlg_expr;
-  MAKE_MULTI_OP(vlg_expr, args, var_type::tp::BV, "|");
+  MAKE_MULTI_OP_BV(vlg_expr, args, "|");
   MAKE_BV_RESULT_TYPE_AS_ARG0(vlg_expr, args);
 } // bvor
 DEFINE_OPERATOR(bvnor) {
   CHECK_BV_MULTI_ARG(idx, args);
   std::string vlg_expr;
-  MAKE_MULTI_OP(vlg_expr, args, var_type::tp::BV, "|");
+  MAKE_MULTI_OP_BV(vlg_expr, args, "|");
   vlg_expr = "~(" + vlg_expr + ")";
   MAKE_BV_RESULT_TYPE_AS_ARG0(vlg_expr, args);
 } // bvnor
@@ -730,7 +641,7 @@ DEFINE_OPERATOR(bvadd) {
   CHECK_BV_MULTI_ARG(idx, args);
 
   std::string vlg_expr;
-  MAKE_MULTI_OP(vlg_expr, args, var_type::tp::BV, "+");
+  MAKE_MULTI_OP_BV(vlg_expr, args,  "+");
   MAKE_BV_RESULT_TYPE_AS_ARG0(vlg_expr, args);
 } // bvadd
 
@@ -748,7 +659,7 @@ DEFINE_OPERATOR(bvmul) {
   CHECK_BV_MULTI_ARG(idx, args);
 
   std::string vlg_expr;
-  MAKE_MULTI_OP(vlg_expr, args, var_type::tp::BV, "*");
+  MAKE_MULTI_OP_BV(vlg_expr, args, "*");
   MAKE_BV_RESULT_TYPE_AS_ARG0(vlg_expr, args);
 } // bvmul
 
@@ -840,9 +751,9 @@ DEFINE_OPERATOR(extract) {
   unsigned left = idx[0];
   unsigned right = idx[1];
   unsigned new_width = std::max(left, right) - std::min(left, right) + 1;
-  ILA_CHECK(new_width <= arg0._type._width);
-  ILA_CHECK(idx[0] >= 0 && left < arg0._type._width);  // left >= 0, always true
-  ILA_CHECK(idx[1] >= 0 && right < arg0._type._width); // right >= 0
+  ILA_CHECK(new_width <= arg0._type.width);
+  ILA_CHECK(idx[0] >= 0 && left < arg0._type.width);  // left >= 0, always true
+  ILA_CHECK(idx[1] >= 0 && right < arg0._type.width); // right >= 0
 
   std::string bitslice =
       "[" + std::to_string(left) + ":" + std::to_string(right) + "]";
@@ -858,7 +769,7 @@ DEFINE_OPERATOR(extract) {
       ) { // when we cannot put in one expression
     
     // search the local var map
-    std::string tp = "##bv" + std::to_string(arg0._type._width) + "_";
+    std::string tp = "##bv" + std::to_string(arg0._type.width) + "_";
     std::string to_replaced_search_name = tp + "(" + arg0._translate + ")";
 
     if (!IN(to_replaced_search_name, local_vars_lookup)) {
@@ -885,7 +796,7 @@ DEFINE_OPERATOR(extract) {
   if (!IN(search_name, name2term_map)) {
     // here we need to put the variable
     return new_term(search_name,
-        SmtTermInfoVerilog(vlg_expr, var_type(var_type::tp::BV, new_width, ""),
+        SmtTermInfoVerilog(vlg_expr, var_type(new_width),
                            this));
   } // end of insert if not found
   return name2term_map.at(search_name);
@@ -899,7 +810,7 @@ DEFINE_OPERATOR(bit2bool) {
   ILA_CHECK(idx[0] >= 0);
 
   unsigned bitidx = idx[0];
-  ILA_CHECK(idx[0] >= 0 && bitidx < arg0._type._width);
+  ILA_CHECK(idx[0] >= 0 && bitidx < arg0._type.width);
   // auto bitslice = "[" + std::to_string(bitidx)  + "]";
   auto bitslice =
       "[" + std::to_string(bitidx) + ":" + std::to_string(bitidx) + "]";
@@ -910,7 +821,7 @@ DEFINE_OPERATOR(bit2bool) {
       S_IN("{", before_adding_bitslice)) {
     // search the local var map
     std::string tp = // args[0]->_type.is_bool() ? "##bool_" :  // no need
-      "##bv" + std::to_string(arg0._type._width) + "_";
+      "##bv" + std::to_string(arg0._type.width) + "_";
 
     std::string to_replaced_search_name = tp + "(" +arg0._translate + ")";
 
@@ -925,7 +836,7 @@ DEFINE_OPERATOR(bit2bool) {
       local_vars_lookup.insert(std::make_pair(
           to_replaced_search_name, local_var ));
     }
-    before_adding_bitslice = local_vars_lookup[to_replaced_search_name];
+    before_adding_bitslice = local_vars_lookup.at(to_replaced_search_name);
   } // if { [ ( in 
   
   ILA_ASSERT(
@@ -938,7 +849,7 @@ DEFINE_OPERATOR(bit2bool) {
   std::string search_name = "##bool_(" + arg0._translate + ")" + bitslice;
   if (!IN(search_name, name2term_map)) {
     return new_term(search_name, SmtTermInfoVerilog(
-                         vlg_expr, var_type(var_type::tp::Bool, 1, ""), this));
+                         vlg_expr, var_type(1), this));
   } // end of insert if not found
   return name2term_map.at(search_name);
 } // bit2bool
@@ -950,13 +861,13 @@ DEFINE_OPERATOR(repeat) {
   ILA_CHECK(arg0._type.is_bv());
   ILA_CHECK(idx[0] > 0);
   auto n_times = idx[0];
-  auto new_width = n_times * arg0._type.GetBoolBvWidth();
+  auto new_width = n_times * arg0._type.width;
 
   std::string vlg_expr = n_times == 1 ? arg0._translate :
     "{" + IntToStrCustomBase(n_times,10,false) + "{" + arg0._translate + "}}";
   std::string search_name = "##bvrepeat" + std::to_string(new_width) + "{" + arg0._translate + "}";
   if (!IN(search_name, name2term_map)) {
-    return new_term(search_name, SmtTermInfoVerilog(vlg_expr, var_type(var_type::tp::BV, new_width, ""), this));
+    return new_term(search_name, SmtTermInfoVerilog(vlg_expr, var_type(new_width), this));
   }
   return name2term_map.at(search_name);
 }
@@ -967,12 +878,12 @@ DEFINE_OPERATOR(zero_extend) {
   const auto & t = get_term(args[0]);
   ILA_CHECK(t._type.is_bv());
   auto extraw = idx[0];
-  auto new_width = extraw + t._type.GetBoolBvWidth();
+  auto new_width = extraw + t._type.width;
   ILA_CHECK(extraw > 0);
   std::string vlg_expr = "{" + IntToStrCustomBase(extraw,10,false) + "'d0," + t._translate + "}";
   std::string search_name = "##bvzext" + std::to_string(new_width) + "{" + t._translate + "}";
   if (!IN(search_name, name2term_map)) {
-    return new_term(search_name, SmtTermInfoVerilog(vlg_expr, var_type(var_type::tp::BV, new_width, ""), this));
+    return new_term(search_name, SmtTermInfoVerilog(vlg_expr, var_type(new_width), this));
   }
   return name2term_map.at(search_name);
 }
@@ -983,7 +894,7 @@ DEFINE_OPERATOR(sign_extend) {
   const auto & t = get_term(args[0]);
   ILA_CHECK(t._type.is_bv());
   auto extraw = idx[0];
-  auto oldw = t._type.GetBoolBvWidth();
+  auto oldw = t._type.unified_width();
   auto new_width = extraw + oldw;
   ILA_CHECK(extraw > 0);
   TermPtrT inner_term_no = mk_extract("", 0, {(int)(oldw)-1,(int)(oldw)-1},{args[0]});//?;
@@ -991,7 +902,7 @@ DEFINE_OPERATOR(sign_extend) {
   std::string vlg_expr = "{{" + IntToStrCustomBase(extraw,10,false) + "{" + inner_term._translate + "}}," + t._translate + "}";
   std::string search_name = "##bvsext" + std::to_string(new_width) + "{" + t._translate + "}";
   if (!IN(search_name, name2term_map)) {
-    return new_term(search_name, SmtTermInfoVerilog(vlg_expr, var_type(var_type::tp::BV, new_width, ""), this));
+    return new_term(search_name, SmtTermInfoVerilog(vlg_expr, var_type( new_width), this));
   }
   return name2term_map.at(search_name);
 }
@@ -1028,6 +939,7 @@ bool SmtlibInvariantParser::ParseInvResultFromFile(const std::string& fname) {
   sbuf << fin.rdbuf();
   raw_string = sbuf.str();
   ParseSmtResultFromString("(assert " + raw_string + ")");
+
   return true;
 }
 
@@ -1040,23 +952,14 @@ void SmtlibInvariantParser::ParseSmtResultFromString(const std::string& text) {
   ILA_ASSERT(buffer[len - 1] == '\0');
   buffer[len - 1] = '\0'; // to make static analysis happy
 
-  //std::FILE* fp = fmemopen((void*)buffer, len * sizeof(char), "r");
-#if 0
-#if defined(__linux__) 
-  std::FILE* fp = fmemopen((void*)buffer, len * sizeof(char), "r");
-#elif ( defined(__unix__) || defined(unix) || defined(__APPLE__) || defined(__MACH__) || defined(__FreeBSD__) )
-  std::FILE* fp = fmemopen_osx((void*)buffer, len * sizeof(char), "r");
-#else
-  #error "No available fmemopen implementation on this platform!"
-#endif
-#endif //  
-
   //ILA_NOT_NULL(fp);
   smtlib2_abstract_parser_parse_string(parser_wrapper, buffer);
   //smtlib2_abstract_parser_parse(&(parser_wrapper->parser), fp);
 
   //fclose(fp);
   delete[] buffer;
+
+  populate_local_vardef_cache();
 }
 
 std::string SmtlibInvariantParser::GetFinalTranslateResult() const {
@@ -1068,11 +971,14 @@ SmtlibInvariantParser::GetLocalVarDefs() const {
   return local_vars;
 }
 
-/// get the local variable definitions
-const SmtlibInvariantParser::free_vars_t&
-SmtlibInvariantParser::GetFreeVarDefs() const {
-  return free_vars;
+void SmtlibInvariantParser::populate_local_vardef_cache() {
+  for (auto const & var_def : local_vars) {
+    ILA_CHECK(var_def.second < term_pool.size());
+    auto result = local_var_defs.emplace(var_def.first, term_pool.at(var_def.second)._translate);
+    ILA_CHECK(result.second) << "Duplicate key: "<< var_def.first; // we want to make sure no duplication
+  }
 }
+
 
 }; // namespace smt
 }; // namespace ilang

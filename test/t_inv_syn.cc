@@ -74,6 +74,7 @@ TEST_F(TestVlgVerifInvSyn, BtorGenParsing) {
   }
 } // CegarPipelineExample
 
+
 // #ifdef ILANG_BUILD_INVSYN
 #if 0
 
@@ -872,51 +873,7 @@ TEST_F(TestVlgVerifInvSyn, CegarPipelineAbcAigEnhance) {
   ILA_INFO << "t(validate)=" << design_stat.TimeOfInvValidate;
 }
 
-TEST_F(TestVlgVerifInvSyn, SimpleCntRelChc) {
-  auto ila_model = CntTest::BuildModel();
 
-  RtlVerifyConfig cfg;
-  cfg.PonoAddKeep = false;
-  cfg.YosysPath = "N/A";
-  cfg.YosysSmtFlattenHierarchy = false;
-
-  auto dirName = std::string(ILANG_TEST_SRC_ROOT) + "/unit-data/inv_syn/cnt2/";
-  VerilogVerificationTargetGenerator vg(
-      {},                               // no include
-      {dirName + "verilog/opposite.v"}, //
-      "opposite",                       // top_module_name
-      dirName + "rfmap/vmap.json",      // variable mapping
-      dirName + "rfmap/cond-relchc.json", dirName + "out/", ila_model.get(),
-      ModelCheckerSelection::RELCHC, cfg);
-
-  EXPECT_FALSE(vg.in_bad_state());
-
-  vg.GenerateTargets();
-}
-
-TEST_F(TestVlgVerifInvSyn, SimpleCntRelChcNoStart) {
-  auto ila_model = CntTest::BuildModel();
-
-  RtlVerifyConfig cfg;
-  cfg.PonoAddKeep = false;
-  cfg.YosysPath = "N/A";
-  cfg.YosysSmtFlattenHierarchy = false;
-  cfg.VerificationSettingAvoidIssueStage = true;
-
-  auto dirName = std::string(ILANG_TEST_SRC_ROOT) + "/unit-data/inv_syn/cnt2/";
-  VerilogVerificationTargetGenerator vg(
-      {},                               // no include
-      {dirName + "verilog/opposite.v"}, //
-      "opposite",                       // top_module_name
-      dirName + "rfmap/vmap.json",      // variable mapping
-      dirName + "rfmap/cond-relchc.json", dirName + "out-no-start/",
-      ila_model.get(),
-      ModelCheckerSelection::RELCHC, cfg);
-
-  EXPECT_FALSE(vg.in_bad_state());
-
-  vg.GenerateTargets();
-}
 
 #endif // ILANG_BUILD_INVSYN
 

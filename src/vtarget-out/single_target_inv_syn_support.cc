@@ -70,52 +70,6 @@ Target : INSTRUCTION
 
 */
 
-void VlgSglTgtGen::add_inv_obj_as_assertion(InvariantObject* inv_obj) {
-  for (auto&& name_expr_pair : inv_obj->GetExtraVarDefs()) {
-    vlg_wrapper.add_wire(std::get<0>(name_expr_pair),
-                         std::get<2>(name_expr_pair), true);
-    vlg_wrapper.add_output(std::get<0>(name_expr_pair),
-                         std::get<2>(name_expr_pair));
-    rfmap_add_internal_wire(std::get<0>(name_expr_pair),
-                            std::get<2>(name_expr_pair));
-    add_wire_assign_assumption(
-        std::get<0>(name_expr_pair),
-        refinement_map.ParseRfExprFromString(std::get<1>(name_expr_pair)),
-        "invariant_aux_var");
-  }
-  for (auto&& name_w_pair : inv_obj->GetExtraFreeVarDefs()) {
-    vlg_wrapper.add_wire(name_w_pair.first, name_w_pair.second, true);
-    vlg_wrapper.add_input(name_w_pair.first, name_w_pair.second);
-  }
-  for (auto&& inv_expr : inv_obj->GetVlgConstraints()) {
-    auto new_cond = refinement_map.ParseRfExprFromString(inv_expr);
-    add_an_assertion(new_cond, "invariant_assert");
-  }
-} // add_inv_obj_as_assertion
-
-void VlgSglTgtGen::add_inv_obj_as_assumption(InvariantObject* inv_obj) {
-  // do you need to provide sub-module instance name?
-  for (auto&& name_expr_pair : inv_obj->GetExtraVarDefs()) {
-    vlg_wrapper.add_wire(std::get<0>(name_expr_pair),
-                         std::get<2>(name_expr_pair), true);
-    vlg_wrapper.add_output(std::get<0>(name_expr_pair),
-                         std::get<2>(name_expr_pair));
-    rfmap_add_internal_wire(std::get<0>(name_expr_pair),
-                            std::get<2>(name_expr_pair));
-    add_wire_assign_assumption(
-        std::get<0>(name_expr_pair),
-        refinement_map.ParseRfExprFromString(std::get<1>(name_expr_pair)),
-        "invariant_aux_var");
-  }
-  for (auto&& name_w_pair : inv_obj->GetExtraFreeVarDefs()) {
-    vlg_wrapper.add_wire(name_w_pair.first, name_w_pair.second, true);
-    vlg_wrapper.add_input(name_w_pair.first, name_w_pair.second);
-  }
-  for (auto&& inv_expr : inv_obj->GetVlgConstraints()) {
-    auto new_cond = refinement_map.ParseRfExprFromString(inv_expr);
-    add_an_assumption(new_cond, "invariant_assume");
-  }
-} // add_inv_obj_as_assumption
 
 void VlgSglTgtGen::add_rf_inv_as_assumption() {
   if (has_rf_invariant) {
@@ -151,9 +105,9 @@ void VlgSglTgtGen::
               has_gussed_synthesized_invariant || has_rf_invariant)
         << "No invariant to handle for INVARIANT target, this is a bug!";
     if (has_confirmed_synthesized_invariant)
-      add_inv_obj_as_assertion(_advanced_param_ptr->_inv_obj_ptr);
+      ;//add_inv_obj_as_assertion(_advanced_param_ptr->_inv_obj_ptr);
     if (has_gussed_synthesized_invariant)
-      add_inv_obj_as_assertion(_advanced_param_ptr->_candidate_inv_ptr);
+      ;//add_inv_obj_as_assertion(_advanced_param_ptr->_candidate_inv_ptr);
     add_rf_inv_as_assertion();
 
   } else if (_vtg_config.ValidateSynthesizedInvariant ==
@@ -162,10 +116,10 @@ void VlgSglTgtGen::
         << "No invariant to handle for INVARIANT target, need candidate "
            "invariant!";
     // check candidate
-    add_inv_obj_as_assertion(_advanced_param_ptr->_candidate_inv_ptr);
+    // add_inv_obj_as_assertion(_advanced_param_ptr->_candidate_inv_ptr);
     // assume rf and confirmed
     if (has_confirmed_synthesized_invariant)
-      add_inv_obj_as_assumption(_advanced_param_ptr->_inv_obj_ptr);
+      ; //add_inv_obj_as_assumption(_advanced_param_ptr->_inv_obj_ptr);
     add_rf_inv_as_assumption();
 
   } else if (_vtg_config.ValidateSynthesizedInvariant ==
@@ -177,7 +131,7 @@ void VlgSglTgtGen::
         << "No invariant to handle for INVARIANT target, need candidate "
            "invariant!";
     // check confirmed
-    add_inv_obj_as_assertion(_advanced_param_ptr->_inv_obj_ptr);
+    // add_inv_obj_as_assertion(_advanced_param_ptr->_inv_obj_ptr);
     // assume rf
     add_rf_inv_as_assumption();
   } else if (_vtg_config.ValidateSynthesizedInvariant ==
@@ -198,49 +152,12 @@ void VlgSglTgtGen::
 
   // -- assumption -- //
   if (has_confirmed_synthesized_invariant)
-    add_inv_obj_as_assumption(_advanced_param_ptr->_inv_obj_ptr);
+    ;//add_inv_obj_as_assumption(_advanced_param_ptr->_inv_obj_ptr);
   if (has_gussed_synthesized_invariant)
-    add_inv_obj_as_assumption(_advanced_param_ptr->_candidate_inv_ptr);
+    ;//add_inv_obj_as_assumption(_advanced_param_ptr->_candidate_inv_ptr);
   add_rf_inv_as_assumption();
 }
 
-void VlgSglTgtGen::
-    ConstructWrapper_add_inv_assumption_or_assertion_target_inv_syn_design_only() {
-  ILA_CHECK(target_type == target_type_t::INV_SYN_DESIGN_ONLY);
-
-  if (_advanced_param_ptr && _advanced_param_ptr->_cex_obj_ptr) {
-    // this is cex reachability checking
-    // -- assertions -- //
-    auto new_cond = refinement_map.ParseRfExprFromString(
-        _advanced_param_ptr->_cex_obj_ptr->GenInvAssert("")); // force vlg state
-    add_an_assertion(rfmap_not(new_cond), "cex_nonreachable_assert");
-    // -- assumption -- //
-    if (_vtg_config.InvariantSynthesisReachableCheckKeepOldInvariant) {
-      add_rf_inv_as_assumption();
-      if (has_confirmed_synthesized_invariant)
-        add_inv_obj_as_assumption(_advanced_param_ptr->_inv_obj_ptr);
-      if (has_gussed_synthesized_invariant) {
-        ILA_WARN
-            << "Using guessed invariants also, please check to confirm them!";
-        add_inv_obj_as_assumption(_advanced_param_ptr->_candidate_inv_ptr);
-      }
-    }
-  } // end of cex checking
-  else if (has_gussed_synthesized_invariant) {
-    // if this is general design invariant checking checking
-    add_inv_obj_as_assertion(_advanced_param_ptr->_candidate_inv_ptr);
-
-    if (has_confirmed_synthesized_invariant)
-      add_inv_obj_as_assumption(_advanced_param_ptr->_inv_obj_ptr);
-    add_rf_inv_as_assumption();
-    /*
-    if(has_confirmed_synthesized_invariant)
-      add_inv_obj_as_assertion(_advanced_param_ptr->_inv_obj_ptr);
-    add_rf_inv_as_assertion();
-    */
-  } else
-    ILA_CHECK(false) << "Unknown invariant handling for design_only target!";
-}
 
 void VlgSglTgtGen::ConstructWrapper_inv_syn_cond_signals() {
   ILA_CHECK(target_type == target_type_t::INV_SYN_DESIGN_ONLY ||

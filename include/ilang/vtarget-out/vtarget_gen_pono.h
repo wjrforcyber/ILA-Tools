@@ -61,8 +61,6 @@ public:
   using info_t = VerilogModifier::info_t;
   /// filename -> (lineno, varname, is_port_sig) vec
   using fn_l_map_t = VerilogModifier::fn_l_map_t;
-  /// Type of advanced parameter
-  using advanced_parameters_t = VlgVerifTgtGenBase::advanced_parameters_t;
 
 public:
   // --------------------- CONSTRUCTOR ---------------------------- //
@@ -89,7 +87,7 @@ public:
       const std::vector<std::string>& implementation_srcs,
       const std::vector<std::string>& include_dirs,
       const RtlVerifyConfig& vtg_config, ModelCheckerSelection backend,
-      const target_type_t& target_tp, advanced_parameters_t* adv_ptr);
+      const target_type_t& target_tp);
 
 protected:
   /// Pono problem generate

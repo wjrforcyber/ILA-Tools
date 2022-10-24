@@ -15,7 +15,7 @@ EnvironmentInvariantSynthesizer::EnvironmentInvariantSynthesizer(const DesignToB
 
 
 void EnvironmentInvariantSynthesizer::CexToSmtProperties(const std::string & cex_vcd_fname, const std::string & property_smt2) const {
-  auto is_reg = [this](const std::string & name) {
+  auto is_reg = [this](const std::string & name) -> bool {
     const auto & sv = this->design_info.GetBtorInfo().state_vars;
     if ( sv.find(name) == sv.end() )
       return false;

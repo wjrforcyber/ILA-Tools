@@ -3,8 +3,8 @@
 /// declarations
 // --- Hongce Zhang (hongcez@princeton.edu)
 
-#ifndef CHC_INV_CALLBACK_FN_H__
-#define CHC_INV_CALLBACK_FN_H__
+#ifndef PONO_INV_CALLBACK_FN_H__
+#define PONO_INV_CALLBACK_FN_H__
 
 #include <ilang/util/str_util.h>
 #include <ilang/env-inv-in/pono_inv_in.h>
@@ -123,4 +123,4 @@ SMTLIB2_VERILOG_DECLHANDLER(rotate_right);
 }; // namespace smt
 }; // namespace ilang
 
-#endif // CHC_INV_CALLBACK_FN_H__
+#endif // PONO_INV_CALLBACK_FN_H__

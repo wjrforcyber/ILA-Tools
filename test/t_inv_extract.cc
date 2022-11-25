@@ -7,7 +7,6 @@
 #include <ilang/util/fs.h>
 #include <ilang/util/log.h>
 #include <ilang/vtarget-out/vtarget_gen.h>
-#include <ilang/env-inv-in/pono_inv_in_wrapper.h>
 
 #include "unit-include/config.h"
 #include "unit-include/memswap.h"
@@ -39,9 +38,12 @@ TEST_F(TestInvExtract, PonoInv) {
 
   {
     smt::SmtlibInvariantParserInstance env_inv_in(info);
-    env_inv_in.ParseSmtResultFromString("");
-    #error "you need to fix this"
-    #warning "remember to check the local variable, which could contain new variables"
+    env_inv_in.ParseSmtResultFromString("(assert (= ex_wb_rd id_ex_rd))");
+    const auto & localvar_def = env_inv_in.GetLocalVarDefStr();
+    for (const auto & var_def : localvar_def) {
+      std::cout << var_def.first << " := " << var_def.second << std::endl;
+    }
+    std::cout << env_inv_in.GetFinalTranslateResult() << std::endl;
   }
   
 }

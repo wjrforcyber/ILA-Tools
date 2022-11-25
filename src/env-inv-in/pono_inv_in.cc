@@ -315,8 +315,6 @@ SmtlibInvariantParser::mk_function(const std::string& name, SortPtrT sort,
     auto term_ptr = search_quantified_var_stack(name);
     if (term_ptr)
       return term_ptr;
-    ILA_CHECK(false) << "unknown symbol:" << name;
-    return 0; // no use
   }
 
   // TODO: here check the variable and term

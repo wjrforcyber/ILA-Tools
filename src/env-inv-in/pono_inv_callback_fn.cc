@@ -3,8 +3,8 @@
 /// Definitions
 // --- Hongce Zhang (hongcez@princeton.edu)
 
-#include <ilang/smt-inout/chc_inv_callback_fn.h>
-#include <ilang/smt-inout/chc_inv_in.h>
+#include <ilang/env-inv-in/pono_inv_callback_fn.h>
+#include <ilang/env-inv-in/pono_inv_in.h>
 #include <ilang/util/log.h>
 #include <ilang/util/str_util.h>
 

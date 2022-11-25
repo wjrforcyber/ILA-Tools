@@ -252,6 +252,9 @@ else()
   set(COVERITY FALSE)
 endif()
 
+add_executable(envinv2json ${CMAKE_CURRENT_SOURCE_DIR}/tools/envinv2json.cc)
+target_link_libraries(envinv2json ${ILANG_LIB_NAME})
+
 # ---------------------------------------------------------------------------- #
 # INSTALL
 # install and export lib target

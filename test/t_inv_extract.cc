@@ -37,7 +37,7 @@ TEST_F(TestInvExtract, PonoInv) {
   const auto & info = converter.GetBtorInfo();
 
   {
-    smt::SmtlibInvariantParserInstance env_inv_in(info);
+    smt::SmtlibInvariantParserInstance env_inv_in(info, "RTL.");
     env_inv_in.ParseSmtResultFromString("(assert (= ex_wb_rd id_ex_rd))");
     const auto & localvar_def = env_inv_in.GetLocalVarDefStr();
     for (const auto & var_def : localvar_def) {

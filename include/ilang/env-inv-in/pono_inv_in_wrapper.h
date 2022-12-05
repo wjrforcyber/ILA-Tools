@@ -71,7 +71,7 @@ protected:
 
 public:
   // -------------- CONSTRUCTOR ------------------- //
-  SmtlibInvariantParserInstance(const BtorStateVars &);
+  SmtlibInvariantParserInstance(const BtorStateVars &, const std::string &);
   /// no copy constructor
   SmtlibInvariantParserInstance(const SmtlibInvariantParserInstance&) = delete;
   /// no assignment

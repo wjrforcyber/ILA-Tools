@@ -77,6 +77,7 @@ public:
 public:
   // -------------- CONSTRUCTOR ------------------- //
   SmtlibInvariantParser(const BtorStateVars &,
+                        const std::string & inv_prefix,
                         bool discourageOutOfScopeVariable = true);
   /// no copy constructor
   SmtlibInvariantParser(const SmtlibInvariantParser&) = delete;
@@ -102,6 +103,8 @@ protected:
   // ----------------- MEMBERS ------------------- //
   /// the parser interface
   smtlib2_abstract_parser* parser_wrapper;
+  /// the prefix to be added to each var
+  std::string _inv_prefix;
   /// the term container
   // we will allocate on these containers
   term_allocation_pool_t term_pool;
@@ -114,8 +117,6 @@ protected:
   name2sort_t name2sort_map;
   /// the temporary def stacks
   quantifier_def_stack_t quantifier_def_stack;
-  /// a collection of functions that should be treated as inv predicates
-  const std::set<std::string> inv_pred_name;
   /// the quantifier declare index (order)
   std::vector<unsigned> quantifier_var_def_idx_stack;
   /// to hold the local variables

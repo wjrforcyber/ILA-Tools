@@ -52,10 +52,11 @@ void SmtlibInvariantParserBase::parse_local_var_name_to_set_counter(const std::s
 
 // -------------- CONSTRUCTOR ------------------- //
 SmtlibInvariantParserInstance::SmtlibInvariantParserInstance(
-    const BtorStateVars & btorinfo)
+    const BtorStateVars & btorinfo,
+    const std::string & prefix)
     : _ptr(NULL) {
 
-  _ptr = new SmtlibInvariantParser(btorinfo);
+  _ptr = new SmtlibInvariantParser(btorinfo, prefix);
 
   ILA_NOT_NULL(_ptr);
 }

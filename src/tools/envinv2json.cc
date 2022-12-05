@@ -11,9 +11,15 @@ using namespace ilang;
 
 int main(int argc, char **argv) {
   if (argc < 4) {
-    cout << "usage : " << argv[0] << " btor-of-design inv.smt2 out.json" << endl;
+    cout << "usage : " << argv[0] << " btor-of-design inv.smt2 out.json [prefix-name]" << endl;
     return 1;
   }
+
+  string inv_prefix = "RTL.";
+  if (argc == 5) {
+    inv_prefix = argv[4];
+  }
+
 
   DesignToBtor converter;
   converter.LoadDesignFromBtor(argv[1]);
@@ -35,7 +41,7 @@ int main(int argc, char **argv) {
 
   string s;
   while( getline(fin, s) ) {
-    smt::SmtlibInvariantParserInstance env_inv_in(info);
+    smt::SmtlibInvariantParserInstance env_inv_in(info, inv_prefix);
     env_inv_in.ParseSmtResultFromString("(assert " + s + ")");
 
     const auto & localvar_def = env_inv_in.GetLocalVarDefStr();

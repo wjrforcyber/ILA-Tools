@@ -22,10 +22,12 @@ namespace smt {
 // -------------- SmtlibInvariantParser ---------------- //
 
 SmtlibInvariantParser::SmtlibInvariantParser(
-    const BtorStateVars & btor2info, bool discourageOutOfScopeVariable)
+    const BtorStateVars & btor2info, 
+    const std::string & inv_prefix, bool discourageOutOfScopeVariable)
     :
 
       parser_wrapper(new smtlib2_abstract_parser()),
+      _inv_prefix(inv_prefix),
       design_smt_info_ptr(btor2info),
       no_outside_var_refer(discourageOutOfScopeVariable), _bad_state(false) {
 
@@ -333,7 +335,7 @@ SmtlibInvariantParser::mk_function(const std::string& name, SortPtrT sort,
   ILA_CHECK(pos != design_smt_info_ptr.state_vars.end())
     << "unknown symbol for function:" << name;
   auto var_sort = pos->second;
-  return new_term(name, SmtTermInfoVerilog("RTL." + vlg_name, var_sort, this));
+  return new_term(name, SmtTermInfoVerilog(_inv_prefix + vlg_name, var_sort, this));
 
 } // mk_function
 

@@ -333,6 +333,9 @@ protected:
   ///   consumed by
   ///   ConstructWrapper_translate_property_and_collect_all_rtl_connection_var
   std::map<std::string, std::vector<rfmap::RfExpr>> all_assumptions;
+  /// all variables constrained in assumptions
+  ///   consumed by ? TODO
+  std::vector<std::tuple<std::string, rfmap::RfExpr, rfmap::RfExpr>> all_variable_constrained_in_assumptions;
   /// assertions : written by add_an_assertion,
   ///   consumed by
   ///   ConstructWrapper_translate_property_and_collect_all_rtl_connection_var
@@ -403,6 +406,13 @@ protected:
                                           const std::string& ret,
                                           const std::string& body,
                                           const std::string& dspt) = 0;
+  
+  /// Add SMT-lib2 assumption tracking : default do nothing
+  ///  this function is overloaded in Pono TargetGen
+  virtual void add_direct_assumption_tracking(const std::string& arg,
+                                          const std::string& ret,
+                                          const std::string& body,
+                                          const std::string& func_name) {}
 
   // helper function to add assumption/assertions to internal data-strcture
   virtual void add_an_assumption(const rfmap::RfExpr& aspt,
@@ -442,6 +452,14 @@ protected:
                                           const rfmap::RfExpr& expression,
                                           int width, const rfmap::RfExpr& cond,
                                           const std::string& dspt);
+  
+  /// @brief add assumption tracking information for COI extraction in PONO
+  /// @param vname variable name assocaited
+  /// @param cond condition
+  /// @param value value
+  virtual void add_assumption_tracking(const std::string &vname,
+                                       const rfmap::RfExpr& cond, 
+                                       const rfmap::RfExpr& value);
 
 public:
   // Do not instantiate

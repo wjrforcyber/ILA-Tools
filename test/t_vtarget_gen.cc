@@ -21,6 +21,7 @@ TEST(TestVlgTargetGen, PipeExample) {
   auto dirName = os_portable_append_dir(ILANG_TEST_DATA_DIR, "vpipe");
   auto rfDir = os_portable_append_dir(dirName, "rfmap");
   auto vtg_config = RtlVerifyConfig();
+  vtg_config.YosysSmtArrayForRegFile = false;
 
   VerilogVerificationTargetGenerator vg(
       {},                                                 // no include
@@ -76,6 +77,7 @@ TEST(TestVlgTargetGen, PipeExampleRfmapPostResetStart) {
   cfg.ForceInstCheckReset = true;
   cfg.CheckInstrCommitSatisfiable = true;
   cfg.PonoOtherOptions = " -v 1 ";
+  cfg.YosysSmtArrayForRegFile = false;
 
   auto dirName = os_portable_append_dir(ILANG_TEST_DATA_DIR, "vpipe");
   auto rfDir = os_portable_append_dir(dirName, "rfmap");
@@ -103,6 +105,7 @@ TEST(TestVlgTargetGen, PipeStallRfmapShortNoValueHolder) {
   RtlVerifyConfig cfg;
   cfg.PonoEngine = "bmc";
   cfg.PonoOtherOptions = " -k 5 -v 1 ";
+  cfg.YosysSmtArrayForRegFile = false;
 
   auto ila_model = SimplePipe::BuildStallModel();
 
@@ -137,6 +140,7 @@ TEST(TestVlgTargetGen, PipeStallRfmapShort) {
   RtlVerifyConfig cfg;
   cfg.PonoEngine = "bmc";
   cfg.PonoOtherOptions = " -k 5 -v 1 ";
+  cfg.YosysSmtArrayForRegFile = false;
   
   auto ila_model = SimplePipe::BuildStallModel();
 
@@ -169,6 +173,7 @@ TEST(TestVlgTargetGen, PipeStallRfmap) {
   RtlVerifyConfig cfg;
   cfg.PonoEngine = "bmc";
   cfg.PonoOtherOptions = " -k 5 -v 1 ";
+  cfg.YosysSmtArrayForRegFile = false;
   
   auto ila_model = SimplePipe::BuildStallModel();
 

@@ -20,7 +20,7 @@ ExprConst::ExprConst(const BvVal& bv_val, const int& bit_width) {
 
   // check bv_val < 2 ^ bit_width
   ILA_CHECK((size_t)bit_width >= BvValTypeBitWidth ||
-            (bv_val.val() >> bit_width) == 0)
+            (bv_val.val() >> (size_t)(bit_width)) == 0)
       << bv_val << " width > " << bit_width;
 
   // MAX is UINT64_MAX - cannot tell if it exceed since it's unsigned

@@ -345,11 +345,23 @@ rfmap::RfExpr VlgSglTgtGen::TranslateMap(const rfmap::RfExpr& in,
   auto vnode = rfmap_var("ILA." + ila_vn);
   auto eq_node = rfmap_eq(vnode, in);
   return eq_node;
-}
+} // end of VlgSglTgtGen::TranslateMap
 
 rfmap::RfExpr VlgSglTgtGen::condition_map_to_rfexpr(
     const std::vector<std::pair<rfmap::RfExpr, rfmap::RfExpr>>& cond_map,
     const std::string& ila_state_name) {
+
+  rfmap::RfExpr prev_map = rfmap_true();
+  for (auto rpos = cond_map.rbegin(); rpos != cond_map.rend(); ++rpos) {
+    rfmap::RfExpr cond = rpos->first;
+    rfmap::RfExpr single_map =
+        TranslateMap(rpos->second, ila_state_name);
+    prev_map = rfmap_ite(cond, single_map, prev_map);
+  }
+  return prev_map;
+
+// below was old implementation
+#if 0
   std::vector<rfmap::RfExpr> all_mappings;
   rfmap::RfExpr prev_neg; // make sure it is a priority condition lists
   for (const auto& cond_map_pair : cond_map) {
@@ -366,6 +378,8 @@ rfmap::RfExpr VlgSglTgtGen::condition_map_to_rfexpr(
   } // end of for each cond_map pair
   ILA_CHECK(!all_mappings.empty());
   return rfmap_and(all_mappings);
+#endif
+
 } // end of condition_map_to_str
 
 rfmap::RfExpr VlgSglTgtGen::condition_map_bv_to_rfexpr(
@@ -398,7 +412,7 @@ VlgSglTgtGen::singlemap_to_rfexpr(const rfmap::SingleVarMap& single_map,
     auto map_str = condition_map_to_rfexpr(single_map.cond_map, ila_state_name);
     return (map_str);
   } // end map type
-} // non_mem_map_to_str
+} // end of function VlgSglTgtGen::singlemap_to_rfexpr
 
 // compared to Gen_varmap_assumpt_assert
 // problem_name, true_for_assumpt_false_for_assert
@@ -426,9 +440,9 @@ void VlgSglTgtGen::Gen_varmap_assumpt_assert(
 
 #define ADD_CONSTR(p1)                                                         \
   do {                                                                         \
-    if (true_for_assumpt_false_for_assert)                                     \
+    if (true_for_assumpt_false_for_assert) {                                   \
       add_an_assumption(rfmap_imply(rfmap_var("decode"), (p1)), problem_name); \
-    else                                                                       \
+    } else                                                                     \
       add_an_assertion(rfmap_imply(rfmap_var("commit"), (p1)), problem_name);  \
   } while (0)
 
@@ -436,7 +450,14 @@ void VlgSglTgtGen::Gen_varmap_assumpt_assert(
   if (vmap.type != rfmap::IlaVarMapping::StateVarMapType::EXTERNMEM) {
     auto map_str = singlemap_to_rfexpr(vmap.single_map, ila_state_name);
     ADD_CONSTR(map_str);
-  } else {
+    // store condition, value in `all_variable_constrained_in_assumptions`
+    if(true_for_assumpt_false_for_assert)
+      all_variable_constrained_in_assumptions.push_back(std::make_tuple(
+        "ILA." + ila_state_name,
+        rfmap_var("decode"),
+        map_str));
+
+  } else { // below deals with the case when mapping memory
     // if(vmap.type == rfmap::IlaVarMapping::StateVarMapType::EXTERNMEM) {
     // TODO: (note: multiple ports!)
     //  assume : START |->

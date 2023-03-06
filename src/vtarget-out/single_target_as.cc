@@ -38,6 +38,11 @@ void VlgSglTgtGen::add_reg_cassign_assumption(const std::string& varname,
   vlg_wrapper.add_always_stmt(varname + " <= " + varname + ";");
   add_an_assumption(rfmap_imply(cond, rfmap_eq(rfmap_var(varname), expression)),
                     dspt);
+  // record the relation here
+  all_variable_constrained_in_assumptions.push_back(std::make_tuple(
+      varname,
+      cond,
+      expression));
 } // add_reg_cassign_assumption
 
 void VlgSglTgtGen::add_smt_assumption(const rfmap::RfExpr& body,
@@ -79,6 +84,46 @@ void VlgSglTgtGen::add_smt_assertion(const rfmap::RfExpr& body,
   }
   add_a_direct_smt_assertion("(" + Join(arg, " ") + ")", "Bool", body_smt2,
                              dspt);
+}
+
+void VlgSglTgtGen::add_assumption_tracking(const std::string &vname, const rfmap::RfExpr& cond, 
+                                           const rfmap::RfExpr& value) {
+  rfmap::RfExprAstUtility::RfMapNoNullNode(cond);
+  rfmap::RfExprAstUtility::RfMapNoNullNode(value);
+  { // condition part
+    std::unordered_map<std::string, rfmap::RfVar> vars;
+    rfmap::RfExprAstUtility::GetVars(cond, vars);
+    std::string cond_smt2 =
+        rfmap::RfExpr2Smt::to_smt2(cond, rfmap::SmtType() /*Bool type*/);
+
+    std::vector<std::string> arg;
+    for (const auto& n_expr_pair : vars) {
+      auto tp = refinement_map.GetType(n_expr_pair.second);
+      auto smt_tp = rfmap::SmtType(tp.type, false);
+      const auto& n = n_expr_pair.first;
+      arg.push_back("(|" + n + "| " + smt_tp.type_to_smt2() + ")");
+    }
+    add_direct_assumption_tracking("(" + Join(arg, " ") + ")", "Bool", cond_smt2,
+                              "|cond."+vname+"|");
+  } // end of condition part
+  { // value part
+    std::unordered_map<std::string, rfmap::RfVar> vars;
+    rfmap::RfExprAstUtility::GetVars(value, vars);
+    auto ret_tp = rfmap::SmtType(refinement_map.GetType(value).type, false);
+
+    std::string value_smt2 =
+        rfmap::RfExpr2Smt::to_smt2(value, ret_tp /*Bool type*/);
+
+    std::vector<std::string> arg;
+    for (const auto& n_expr_pair : vars) {
+      auto tp = refinement_map.GetType(n_expr_pair.second);
+      auto smt_tp = rfmap::SmtType(tp.type, false);
+      const auto& n = n_expr_pair.first;
+      arg.push_back("(|" + n + "| " + smt_tp.type_to_smt2() + ")");
+    }
+    add_direct_assumption_tracking("(" + Join(arg, " ") + ")", ret_tp.to_string(), value_smt2,
+                              "|value."+vname+"|");
+  } // end of value part
 }
 
 void VlgSglTgtGen::add_an_assumption(const rfmap::RfExpr& aspt,
@@ -242,6 +287,11 @@ void VlgSglTgtGen::
     }
   }
 
+  for (auto& n_v_cond : all_variable_constrained_in_assumptions) {
+    std::get<1>(n_v_cond) = ReplExpr(std::get<1>(n_v_cond));
+    std::get<2>(n_v_cond) = ReplExpr(std::get<2>(n_v_cond));
+  }
+
   if (is_jg) {
     for (auto& dspt_aspt : all_assumptions) {
       for (auto& aspt : dspt_aspt.second) {
@@ -396,6 +446,10 @@ void VlgSglTgtGen::
 
       add_a_direct_cover_check(GetVlg(cvr), dspt_cvrs.first);
     }
+  }
+  
+  for (auto& n_v_cond : all_variable_constrained_in_assumptions) {
+    add_assumption_tracking(std::get<0>(n_v_cond), std::get<1>(n_v_cond), std::get<2>(n_v_cond));
   }
 
 } // ConstructWrapper_translate_property_and_collect_all_rtl_connection_var

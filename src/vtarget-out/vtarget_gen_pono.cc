@@ -227,6 +227,14 @@ void VlgSglTgtGen_Pono::Export_script(const std::string& script_name) {
 
 } // Export_script
 
+void VlgSglTgtGen_Pono::add_direct_assumption_tracking(const std::string& arg,
+                                                       const std::string& ret,
+                                                       const std::string& body,
+                                                       const std::string& func_name) {
+  _problems.smt_assumption_var_use_tracking.push_back("(define-fun " +
+                                      func_name + " " + arg + " " +
+                                      ret + " " + body + ")");
+}
 
 /// Add SMT-lib2 assumption
 void VlgSglTgtGen_Pono::add_a_direct_smt_assumption(const std::string& arg,
@@ -355,6 +363,14 @@ void VlgSglTgtGen_Pono::Export_problem(const std::string& yosys_script_name) {
       smt_fout << prop << std::endl;
   }
 
+  auto var_use_tracking_fname = 
+      os_portable_append_dir(_output_path, "asmpt-ila.smt2");
+  {
+    std::ofstream smt_fout(var_use_tracking_fname);
+    for (const auto& prop : _problems.smt_assumption_var_use_tracking)
+      smt_fout << prop << std::endl;
+  }
+  
   if (!_problems.sanity_assertions.empty()) {
     std::string ys_script_name_path =
         os_portable_append_dir(_output_path, "gen_sanity_prop.ys");

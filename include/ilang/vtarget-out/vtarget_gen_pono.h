@@ -49,6 +49,9 @@ protected:
   prop_t smt_assumptions;
   /// SMT-LIB2 assertions
   prop_t smt_assertions;
+  /// tracking variable usage in assumptions
+  /// in SMT-LIB2 format
+  prop_t smt_assumption_var_use_tracking;
 
 }; // Pono_problem
 
@@ -122,6 +125,11 @@ protected:
                                           const std::string& body,
                                           const std::string& dspt) override;
 
+  /// Add SMT-lib2 assumption tracking
+  virtual void add_direct_assumption_tracking(const std::string& arg,
+                                          const std::string& ret,
+                                          const std::string& body,
+                                          const std::string& func_name) override;
   /// Pre export work : nothing for pono
   void virtual PreExportProcess() override;
 

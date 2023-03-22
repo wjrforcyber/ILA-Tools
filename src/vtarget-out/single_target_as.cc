@@ -86,6 +86,7 @@ void VlgSglTgtGen::add_smt_assertion(const rfmap::RfExpr& body,
                              dspt);
 }
 
+// convert given assumptions to smt-lib2 functions under the given names
 void VlgSglTgtGen::add_assumption_tracking(const std::string &vname, const rfmap::RfExpr& cond, 
                                            const rfmap::RfExpr& value) {
   rfmap::RfExprAstUtility::RfMapNoNullNode(cond);
@@ -372,6 +373,13 @@ void VlgSglTgtGen::
   for (auto& dspt_vn_rfexpr_eq : assign_or_assumptions) {
     auto& eq = std::get<3>(dspt_vn_rfexpr_eq);
     eq = find_and_replace_array_const(eq, array_const_set, rtl_extra_wire);
+  }
+
+  for (auto& name_cond_val : all_variable_constrained_in_assumptions) {
+    auto & cond = std::get<1>(name_cond_val);
+    auto & val = std::get<2>(name_cond_val);
+    cond = find_and_replace_array_const(cond, array_const_set, rtl_extra_wire );
+    val = find_and_replace_array_const(val, array_const_set, rtl_extra_wire );
   }
 
   // last step

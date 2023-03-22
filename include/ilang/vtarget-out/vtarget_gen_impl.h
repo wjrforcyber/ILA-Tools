@@ -333,8 +333,8 @@ protected:
   ///   consumed by
   ///   ConstructWrapper_translate_property_and_collect_all_rtl_connection_var
   std::map<std::string, std::vector<rfmap::RfExpr>> all_assumptions;
-  /// all variables constrained in assumptions
-  ///   consumed by ? TODO
+  /// all variables constrained in assumptions: <name, cond, value> list
+  ///   consumed by ConstructWrapper_translate_property_and_collect_all_rtl_connection_var
   std::vector<std::tuple<std::string, rfmap::RfExpr, rfmap::RfExpr>> all_variable_constrained_in_assumptions;
   /// assertions : written by add_an_assertion,
   ///   consumed by

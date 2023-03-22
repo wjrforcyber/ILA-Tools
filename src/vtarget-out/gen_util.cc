@@ -566,6 +566,13 @@ void VlgSglTgtGen::handle_start_condition(
     //                  "$valid", vlg_ila.validName);
     add_an_assumption(rfmap_imply(rfmap_var("__START__"), c),
                       "start_condition");
+    // add assumption to all_variable_constrained_in_assumptions as well
+    all_variable_constrained_in_assumptions.push_back(
+      std::make_tuple(
+      "__START__",
+      rfmap_var("__START__"),
+      c)
+    );
   }
 } // handle_start_condition
 

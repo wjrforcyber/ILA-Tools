@@ -561,19 +561,25 @@ void VlgSglTgtGen::Gen_varmap_assumpt_assert(
 
 void VlgSglTgtGen::handle_start_condition(
     const std::vector<rfmap::RfExpr>& dc) {
+  rfmap::RfExpr accumulated_start_cond;
+  
   for (const auto& c : dc) {
     // cond = ReplaceAll(ReplaceAll(cond, "$decode", vlg_ila.decodeNames[0]),
     //                  "$valid", vlg_ila.validName);
     add_an_assumption(rfmap_imply(rfmap_var("__START__"), c),
                       "start_condition");
-    // add assumption to all_variable_constrained_in_assumptions as well
-    all_variable_constrained_in_assumptions.push_back(
-      std::make_tuple(
-      "__START__",
-      rfmap_var("__START__"),
-      c)
-    );
+    if (accumulated_start_cond == nullptr)
+      accumulated_start_cond = c;
+    else
+      accumulated_start_cond = rfmap_and(accumulated_start_cond, c);
   }
+  // add assumption to all_variable_constrained_in_assumptions as well
+  all_variable_constrained_in_assumptions.push_back(
+    std::make_tuple(
+    "__START__",
+    rfmap_var("__START__"),
+    accumulated_start_cond)
+  );
 } // handle_start_condition
 
 /// register a reg in refinement_map.all_var_def_type

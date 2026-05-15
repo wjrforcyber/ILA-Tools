@@ -6,15 +6,9 @@
 #   PATH   extern/glog
 # ---------------------------------------------------------------------------- #
 # find installed package 
-find_package(glog 0.4.0 QUIET)
-
-# build from embeded subtree (in-source) 
-if(NOT GLOG_FOUND)
-
-  set(WITH_GFLAGS OFF CACHE INTERNAL "")
-  add_subdirectory(glog)
-
-endif() # GLOG_FOUND
+# build from embedded subtree (in-source)
+set(WITH_GFLAGS OFF CACHE INTERNAL "")
+add_subdirectory(glog)
 
 
 # ---------------------------------------------------------------------------- #

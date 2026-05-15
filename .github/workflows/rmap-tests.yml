@@ -1,0 +1,32 @@
+name: R-Map Tests
+
+on:
+  push:
+    branches: [refinement-upgrade]
+  pull_request:
+    branches: [refinement-upgrade]
+
+jobs:
+  rmap-tests:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        submodules: recursive
+
+    - name: Install dependencies
+      run: sudo apt-get update && sudo apt-get install -y bison flex z3 libz3-dev libfl-dev
+
+    - name: Configure
+      run: cmake -B build -DILANG_BUILD_TEST=ON
+
+    - name: Build
+      run: cmake --build build -j$(nproc)
+
+    - name: Run r-map tests
+      working-directory: build
+      run: |
+        ./test/unit_tests \
+          --gtest_filter="TestVlgTargetGen.*:TestRfmapProcess.*:TestRfexpr.*" \
+          --gtest_print_time=1

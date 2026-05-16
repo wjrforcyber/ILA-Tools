@@ -5,6 +5,7 @@
 #define ILANG_UTIL_STR_UTIL_H__
 
 #include <algorithm>
+#include <cstdint>
 #include <functional>
 #include <string>
 #include <vector>

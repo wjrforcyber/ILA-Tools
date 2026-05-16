@@ -87,6 +87,8 @@ public:
   // ------------------------- ACCESSORS/MUTATORS --------------------------- //
   /// Return the wrapped Sort pointer.
   inline SortPtr get() const { return ptr_; }
+  /// Check if the wrapper holds a valid pointer.
+  explicit operator bool() const { return ptr_ != nullptr; }
 }; // class SortRef
 
 /// \brief The wrapper of Expr (e.g. state var, var relation, constant, etc).
@@ -107,6 +109,8 @@ public:
   // ------------------------- ACCESSORS/MUTATORS --------------------------- //
   /// Return the wrapped Expr pointer.
   inline ExprPtr get() const { return ptr_; }
+  /// Check if the wrapper holds a valid pointer.
+  explicit operator bool() const { return ptr_ != nullptr; }
   /// Return the bit-width if is bit-vector; return -1 otherwise.
   int bit_width() const;
   /// Return the address bit-width if is memory; return -1 otherwise.
@@ -156,6 +160,9 @@ public:
   /// \brief GEt the entry number of the memory (size regardless of bit-width).
   int GetEntryNum();
 
+  /// Logical not for Booleans (hidden friend to avoid ADL interference).
+  friend ExprRef operator!(const ExprRef& a);
+
 }; // class ExprRef
 
 /******************************************************************************/
@@ -163,8 +170,6 @@ public:
 /******************************************************************************/
 /// Arithmetic negate for bit-vectors.
 ExprRef operator-(const ExprRef& a);
-/// Logical not for Booleans.
-ExprRef operator!(const ExprRef& a);
 /// Bit-wise complement for bit-vectors.
 ExprRef operator~(const ExprRef& a);
 
@@ -401,6 +406,8 @@ public:
   std::string name() const;
   /// Return the wrapped Func pointer.
   inline FuncPtr get() const { return ptr_; }
+  /// Check if the wrapper holds a valid pointer.
+  explicit operator bool() const { return ptr_ != nullptr; }
 
   // ------------------------- METHODS -------------------------------------- //
   /// Apply the function with no argument.
@@ -464,6 +471,8 @@ public:
   // ------------------------- ACCESSORS/MUTATORS --------------------------- //
   /// Return the wrapped ILA pointer.
   inline InstrPtr get() const { return ptr_; }
+  /// Check if the wrapper holds a valid pointer.
+  explicit operator bool() const { return ptr_ != nullptr; }
 
   /// Return the instruction name as std::string.
   std::string name() const;
@@ -571,6 +580,8 @@ public:
 
   /// Return the wrapped ILA pointer.
   inline IlaPtr get() const { return ptr_; }
+  /// Check if the wrapper holds a valid pointer.
+  explicit operator bool() const { return ptr_ != nullptr; }
 
   // ------------------------- UTILITIES ------------------------------------ //
   /// \brief Export an ILA as Verilog

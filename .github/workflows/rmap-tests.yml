@@ -18,11 +18,8 @@ jobs:
     - name: Install dependencies
       run: sudo apt-get update && sudo apt-get install -y cmake g++ bison flex z3 libz3-dev libfl-dev
 
-    - name: Patch googletest Werror
-      run: sed -i 's/-Werror/-Wno-error/g' extern/googletest/googletest/cmake/internal_utils.cmake
-
     - name: Configure
-      run: cmake -B build -DILANG_BUILD_TEST=ON -DCMAKE_POLICY_VERSION_MINIMUM=3.5
+      run: cmake -B build -DILANG_BUILD_TEST=ON
 
     - name: Build
       run: cmake --build build -j$(nproc)

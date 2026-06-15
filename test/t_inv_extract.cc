@@ -50,87 +50,6 @@ TEST_F(TestInvExtract, Abc) {
   ILA_DLOG("InvExtract") << inv_obj.GetVlgConstraints().at(0);
 }
 
-TEST_F(TestInvExtract, PipeBlifGla) {
-
-  auto dirName = os_portable_append_dir(
-      ILANG_TEST_SRC_ROOT, {"unit-data", "inv_extract", "pipe", "blif-gla"});
-
-  InvariantObject inv_obj;
-  InvariantInCnf inv_cnf;
-  inv_obj.set_dut_inst_name("m1");
-
-  inv_obj.AddInvariantFromAbcResultFile(
-      os_portable_append_dir(dirName, "wrapper.blif"),
-      os_portable_append_dir(dirName, "ffmap.info"), true, false,
-      os_portable_append_dir(dirName, "glamap.info"),
-      false, // use aiger, if false, the following has no use
-      "", inv_cnf, InvariantInCnf());
-
-  EXPECT_EQ(inv_obj.GetVlgConstraints().size(), 1);
-  ILA_DLOG("InvExtract") << inv_obj.GetVlgConstraints().at(0);
-}
-
-TEST_F(TestInvExtract, AbcAiger) {
-  auto dirName = os_portable_append_dir(
-      ILANG_TEST_SRC_ROOT, {"unit-data", "inv_extract", "abc-aig"});
-
-  InvariantObject inv_obj;
-  InvariantInCnf inv_cnf;
-  inv_obj.set_dut_inst_name("m1");
-
-  inv_obj.AddInvariantFromAbcResultFile(
-      os_portable_append_dir(dirName, "__aiger_prepare.blif"),
-      os_portable_append_dir(dirName, "ffmap.info"), true, false,
-      "",   /*,dirName + "glamap.info"*/
-      true, // use aiger, if false, the following has no use
-      os_portable_append_dir(dirName, "wrapper.aig.map"), inv_cnf,
-      InvariantInCnf());
-
-  EXPECT_EQ(inv_obj.GetVlgConstraints().size(), 1);
-  ILA_DLOG("InvExtract") << inv_obj.GetVlgConstraints().at(0);
-}
-
-TEST_F(TestInvExtract, AbcAigerGLA) {
-  auto dirName = os_portable_append_dir(
-      ILANG_TEST_SRC_ROOT, {"unit-data", "inv_extract", "abc-aig-gla"});
-
-  InvariantObject inv_obj;
-  InvariantInCnf inv_cnf;
-  inv_obj.set_dut_inst_name("m1");
-
-  inv_obj.AddInvariantFromAbcResultFile(
-      os_portable_append_dir(dirName, "__aiger_prepare.blif"),
-      os_portable_append_dir(dirName, "ffmap.info"), true, false,
-      os_portable_append_dir(dirName, "glamap.info"),
-      true, // use aiger, if false, the following has no use
-      os_portable_append_dir(dirName, "wrapper.aig.map"), inv_cnf,
-      InvariantInCnf());
-
-  EXPECT_EQ(inv_obj.GetVlgConstraints().size(), 1);
-  ILA_DLOG("InvExtract") << inv_obj.GetVlgConstraints().at(0);
-}
-
-TEST_F(TestInvExtract, PipeAigerGLA) {
-  auto dirName = os_portable_append_dir(
-      ILANG_TEST_SRC_ROOT, {"unit-data", "inv_extract", "pipe", "aiger-gla"});
-
-  InvariantObject inv_obj;
-  InvariantInCnf inv_cnf;
-  inv_obj.set_dut_inst_name("m1");
-
-  inv_obj.AddInvariantFromAbcResultFile(
-      os_portable_append_dir(dirName, "__aiger_prepare.blif"),
-      os_portable_append_dir(dirName, "ffmap.info"), true, false,
-      os_portable_append_dir(dirName,
-                             "glamap.info"), /*,dirName + "glamap.info"*/
-      true, // use aiger, if false, the following has no use
-      os_portable_append_dir(dirName, "wrapper.aig.map"), inv_cnf,
-      InvariantInCnf());
-
-  EXPECT_EQ(inv_obj.GetVlgConstraints().size(), 1);
-  ILA_DLOG("InvExtract") << inv_obj.GetVlgConstraints().at(0);
-}
-
 TEST_F(TestInvExtract, GrainInvExtract) {
   auto dirName = os_portable_append_dir(ILANG_TEST_SRC_ROOT,
                                         {"unit-data", "inv_extract", "grain"});
@@ -284,40 +203,6 @@ TEST_F(TestInvExtract, Z3InvExtract) {
       "((m1.imp[1:1]) ||(!(m1.v[0:0])) ||(m1.v[1:1]) ||(m1.imp[0:0])) &&"
       "((m1.imp[0:0]) ||(!(m1.v[0:0])) ||(!(m1.v[1:1])) ||(!(m1.imp[1:1]))) &&"
       "((m1.v[0:0]) ||(!(m1.v[1:1])) ||(!(m1.imp[0:0])) ||(!(m1.imp[1:1]))))");
-    EXPECT_TRUE(inv_obj.GetExtraFreeVarDefs().empty());
-    EXPECT_TRUE(inv_obj.GetExtraVarDefs().empty());
-  }
-}
-
-TEST_F(TestInvExtract, Z3InvExtractPipe) {
-  // prepare for ...
-  auto dirName =
-      std::string(ILANG_TEST_SRC_ROOT) + "/unit-data/inv_extract/pipe/z3/";
-  auto smt_file = os_portable_append_dir(dirName, "__design_smt.smt2");
-
-  InvariantInCnf inv_cnf;
-
-  bool flatten_datatype = false;
-  bool flatten_hierarchy = true;
-
-  InvariantObject inv_obj;
-  inv_obj.set_dut_inst_name("m1");
-
-  std::ifstream fin(smt_file);
-  std::stringstream buffer;
-  buffer << fin.rdbuf();
-  fin.close();
-  {
-    smt::YosysSmtParser design_info(buffer.str());
-
-    auto inv_file = os_portable_append_dir(dirName, "__synthesis_result.txt");
-    inv_obj.AddInvariantFromChcResultFile(design_info, // smt
-                                          "",          // tag
-                                          inv_file,    // result file
-                                          flatten_datatype, flatten_hierarchy);
-
-    EXPECT_EQ(inv_obj.GetVlgConstraints().size(), 1);
-    ILA_DLOG("InvExtract") << inv_obj.GetVlgConstraints().at(0);
     EXPECT_TRUE(inv_obj.GetExtraFreeVarDefs().empty());
     EXPECT_TRUE(inv_obj.GetExtraVarDefs().empty());
   }

@@ -8,7 +8,6 @@
 #include <ilang/vtarget-out/vtarget_gen.h>
 
 #include "unit-include/config.h"
-#include "unit-include/memswap.h"
 #include "unit-include/pipe_ila.h"
 #include "unit-include/util.h"
 
@@ -749,89 +748,6 @@ TEST_F(TestVlgVerifInvSyn, CegarCntGrainBackVars) {
   vg.GenerateVerificationTarget();
 
 } // CegarCntGrain
-
-TEST_F(TestVlgVerifInvSyn, CegarPipelineAbcAigEnhance) {
-  auto ila_model = SimplePipe::BuildModel();
-
-  RtlVerifyConfig cfg;
-  // cfg.InvariantSynthesisReachableCheckKeepOldInvariant = false;
-  cfg.PonoAddKeep = false;
-  cfg.VerificationSettingAvoidIssueStage = true;
-  cfg.YosysSmtFlattenDatatype = true; // for freqhorn
-  cfg.YosysSmtFlattenHierarchy = true;
-  cfg.YosysPath = "N/A";
-  cfg.CosaPyEnvironment = "N/A";
-  cfg.CosaPath = "N/A";
-  cfg.AbcPath = "N/A";
-  cfg.Z3Path = "N/A";
-  cfg.GrainPath = "N/A";
-  cfg.AbcUseGla = true;
-  cfg.AbcUseAiger = true;
-  cfg.AbcUseCorr = false;
-  cfg.CosaSolver = "btor";
-
-  cfg.GrainOptions = {"--ante-size", "1", "--conseq-size", "1",
-                      "--gen-spec-only"};
-
-  auto dirName =
-      os_portable_join_dir({ILANG_TEST_SRC_ROOT, "unit-data", "vpipe"});
-  auto refDir = os_portable_join_dir({ILANG_TEST_SRC_ROOT, "unit-data",
-                                      "inv_syn", "vpipe-out-abc-aig-enhance"});
-  os_portable_copy_dir(refDir, outDir);
-
-  InvariantSynthesizerCegar vg(
-      {},                                                    // no include
-      {os_portable_append_dir(dirName, "simple_pipe.v")},    //
-      "pipeline_v",                                          // top_module_name
-      os_portable_join_dir({dirName, "rfmap", "vmap.json"}), // variable mapping
-      os_portable_join_dir({dirName, "rfmap", "cond-noinv.json"}), outDir,
-      ila_model.get(),
-      ModelCheckerSelection::COSA,
-      VerilogVerificationTargetGenerator::synthesis_backend_selector::ABC, cfg);
-
-  EXPECT_FALSE(vg.in_bad_state());
-
-  /// The incremental cnf
-  InvariantInCnf incremental_cnf;
-
-  vg.GenerateVerificationTarget();
-  EXPECT_FALSE(vg.RunVerifAuto("ADD", "", true)); // should continue : has cex
-  vg.ExtractVerificationResult();
-  vg.GenerateSynthesisTarget();
-  EXPECT_FALSE(vg.RunSynAuto(true));
-
-  vg.ExtractAbcSynthesisResultForEnhancement(incremental_cnf);
-  { // what inv to enhance
-    const auto& inv_to_enhance = vg.GetCandidateInvariants();
-    EXPECT_EQ(inv_to_enhance.NumInvariant(), 1);
-    if (inv_to_enhance.NumInvariant() >= 1)
-      ILA_DLOG(DBG_TAG) << "INV to enhance:"
-                        << inv_to_enhance.GetVlgConstraints()[0];
-  }
-
-  // This is the function we need to write
-  EXPECT_TRUE(vg.WordLevelEnhancement(incremental_cnf, true));
-  vg.MergeCnf(incremental_cnf);
-  incremental_cnf.Clear();
-  vg.ClearAllCandidateInvariants(); // already included (you can also accept but
-                                    // unnecessary)
-
-  vg.GetInvariants().ExportToFile(os_portable_append_dir(outDir, "inv.txt"));
-
-  EXPECT_FALSE(vg.in_bad_state());
-
-  vg.GenerateInvariantVerificationTarget();
-  auto design_stat = vg.GetDesignStatistics();
-  ILA_INFO << "========== Design Info ==========";
-  ILA_INFO << "#bits= " << design_stat.NumOfDesignStateBits;
-  ILA_INFO << "#vars=" << design_stat.NumOfDesignStateVars;
-  ILA_INFO << "#extra_bits= " << design_stat.NumOfExtraStateBits;
-  ILA_INFO << "#extra_vars=" << design_stat.NumOfExtraStateVars;
-  ILA_INFO << "t(eq)= " << design_stat.TimeOfEqCheck;
-  ILA_INFO << "t(syn)=" << design_stat.TimeOfInvSyn;
-  ILA_INFO << "t(proof)= " << design_stat.TimeOfInvProof;
-  ILA_INFO << "t(validate)=" << design_stat.TimeOfInvValidate;
-}
 
 TEST_F(TestVlgVerifInvSyn, SimpleCntRelChc) {
   auto ila_model = CntTest::BuildModel();

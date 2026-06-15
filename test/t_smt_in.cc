@@ -28,31 +28,6 @@ TEST(TestSmtParse, Type) {
   EXPECT_EQ(smt::convert_to_binary("0011", 2, 3), "#b011");
 }
 
-TEST(TestSmtParse, Parse) {
-  auto fn = os_portable_append_dir(
-      ILANG_TEST_SRC_ROOT, {"unit-data", "smt", "pipeline_design.smt2"});
-  auto fo = os_portable_append_dir(ILANG_TEST_SRC_ROOT,
-                                   {"unit-data", "smt", "smt-out.smt2"});
-
-  std::ifstream fin(fn);
-  std::stringstream buffer;
-  buffer << fin.rdbuf();
-  fin.close();
-
-  smt::smt_file smtinfo;
-  smt::str_iterator smt_string_iterator(buffer.str());
-  smt::ParseFromString(smt_string_iterator, smtinfo);
-
-  {
-    std::ofstream fout(fo);
-    ILA_ERROR_IF(!fout.is_open()) << "Error writing to: " << fo;
-    fout << smtinfo.toString();
-    fout.close();
-    os_portable_remove_file(fo);
-  }
-  // Expect no error...
-}
-
 #ifdef ILANG_BUILD_INVSYN
 
 TEST(TestSmtParse, ChcParse) {

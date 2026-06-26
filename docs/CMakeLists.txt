@@ -18,5 +18,19 @@ if(DOXYGEN_FOUND)
     COMMENT "Generate ILAng API documentation with Doxygen" VERBATIM
   )
 
-endif() 
+  # ---- Focused R-Map (refinement map) documentation ----
+  configure_file(
+    ${CMAKE_CURRENT_SOURCE_DIR}/Doxyfile.rmap.in
+    ${CMAKE_CURRENT_BINARY_DIR}/Doxyfile.rmap
+    @ONLY
+  )
+
+  add_custom_target(rmap-doc
+    COMMAND
+      ${DOXYGEN_EXECUTABLE} ${CMAKE_CURRENT_BINARY_DIR}/Doxyfile.rmap
+    WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+    COMMENT "Generate ILAng R-Map documentation with Doxygen" VERBATIM
+  )
+
+endif()
 

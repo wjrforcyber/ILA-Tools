@@ -44,6 +44,8 @@ build/*
 # Doxygen output
 #html/
 #latex/
+/rmap-docs/
+doxygen.log
 
 # Python object files
 *.pyc

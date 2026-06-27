@@ -74,6 +74,12 @@ set(CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake" ${CMAKE_MODULE_PATH})
 
 include(CheckIncludeFileCXX)
 
+# Newer Apple Clang makes implicit function declarations a hard error.
+if(APPLE)
+  add_compile_options($<$<COMPILE_LANGUAGE:C>:-Wno-error=implicit-function-declaration>
+                      $<$<COMPILE_LANGUAGE:C>:-Wno-implicit-function-declaration>)
+endif()
+
 ##
 ## git submodules
 ##

@@ -17,12 +17,11 @@ namespace rfmap {
 
 // ---------------------- varmap ------------------------------- //
 
-/*
-"model names" : {
-  "ILA" : "SomeNameHere",
-  "RTL" : "SomeNameHere"
-}
-*/
+// For the full refinement-map JSON schema (accepted keys, shapes, and rejected
+// keys), see the "Refinement Map JSON Schema" page under Related Pages
+// (docs/rfmap_json_schema.md). The parser (src/rfmap-in/verilog_rfmap.cc) is
+// authoritative — do NOT trust the example snippets in this header alone; some
+// historical keys (e.g. "model names") are no longer accepted.
 
 typedef verilog_expr::VExprAst::VExprAstPtr RfExpr;
 typedef verilog_expr::VExprAstVar::VExprAstVarPtr RfVar;
@@ -65,7 +64,10 @@ struct IlaVarMapping {
 }; // struct IlaVarMapping
 
 struct RtlInterfaceMapping {
-  /// "CLOCK" : { "clkA" : "wclk", "clkB" : ["rclk", "clk"] }
+  /// "CLOCK" accepts three shapes: a string (placed in the "default" domain,
+  /// e.g. "CLOCK" : "clk"), an array of strings (all in "default", e.g.
+  /// "CLOCK" : ["clk"]), or an object {domain_name: [pins]}, e.g.
+  /// "CLOCK" : { "clkA" : ["wclk"], "clkB" : ["rclk", "clk"] }
   // name of the clock domain -> list of clock pins
   std::map<std::string, std::set<std::string>> clock_domain_defs;
 
@@ -75,7 +77,8 @@ struct RtlInterfaceMapping {
   std::set<std::string> nreset_pins;
   // "CUSTOMRESET" : {"name"  : "input-pin", ...}
   std::map<std::string, std::vector<std::string>> custom_reset_domain_defs;
-  // "INPUT/INPUTs/INPUT-ports",
+  // "INPUT"/"INPORT"/"INPUTS"/"INPORTS"/"INPUT-PORT"/"INPUT-PORTS"
+  // (matching is case- and hyphen/space-insensitive)
   std::map<std::string, RfExpr> input_port_connection;
 }; // struct RtlInterfaceMapping
 
@@ -204,7 +207,7 @@ struct VerilogRefinementMap {
   // ---------------------- varmap ------------------------------- //
   /// State mapping section
   std::map<std::string, IlaVarMapping> ila_state_var_map;
-  /// State mapping section
+  /// Input mapping section
   std::map<std::string, IlaVarMapping> ila_input_var_map;
   /// RTL interface connection specification
   RtlInterfaceMapping rtl_interface_connection;

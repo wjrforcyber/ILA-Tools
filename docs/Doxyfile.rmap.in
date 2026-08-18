@@ -2,7 +2,8 @@ PROJECT_NAME           = "ILAng R-Map"
 OUTPUT_DIRECTORY       = @CMAKE_CURRENT_BINARY_DIR@/rmap-docs
 INPUT                  = @PROJECT_SOURCE_DIR@/include/ilang/rfmap-in \
                          @PROJECT_SOURCE_DIR@/include/ilang/ila-mngr/v_eq_check_refinement.h \
-                         @PROJECT_SOURCE_DIR@/include/ilang/vtarget-out/vtarget_gen.h
+                         @PROJECT_SOURCE_DIR@/include/ilang/vtarget-out/vtarget_gen.h \
+                         @PROJECT_SOURCE_DIR@/docs/rfmap_json_schema.md
 RECURSIVE              = YES
 GENERATE_HTML          = YES
 GENERATE_LATEX         = NO

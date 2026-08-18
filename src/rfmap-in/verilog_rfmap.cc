@@ -586,6 +586,8 @@ std::string JsonRfmapParseValueRecorder(ValueRecorder& tracker,
 VerilogRefinementMap::VerilogRefinementMap(
     const std::string& varmap_json_file,
     const std::string& instcond_json_file) {
+  // !!! Keep in sync with docs/rfmap_json_schema.md !!!
+  // If you add/remove/rename an accepted JSON key here, update that page.
 
   ParseRfExprErrFlag = false;
 
